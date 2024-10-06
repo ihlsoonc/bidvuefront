@@ -138,9 +138,6 @@
   
       // 선택된 좌석이 변경될 때마다 좌석 데이터를 가져옵니다.
       watch(clickCount, () => {
-        console.log("bidresult matchNumber.value",matchNumber.value);
-        console.log("bidresult selectedSeats.value",selectedSeats.value);
-        
         if (selectedSeats.value.length > 0) {
           fetchSeatData(matchNumber.value, selectedSeats.value, (data) => {
             selectedSeats.value = data;
@@ -154,10 +151,7 @@
       watch(selectedSeats, () => {
         calculateBiddedSeats();
         const minBidAmountCalc = selectedSeats.value.reduce((sum, seat) => {
-          console.log("seatprice: ", seat.seat_price, " bid : ", seat.current_bid_amount);
         const chosenAmount = seat.current_bid_amount > 0 ? seat.current_bid_amount : seat.seat_price;
-        console.log("seatprice: ", seat.seat_price, " bid : ", seat.current_bid_amount, " chosen: ", chosenAmount, " sum :",sum);
-
           return sum + (chosenAmount || 0);
         }, 0);
         minBidAmount.value = minBidAmountCalc;
@@ -172,29 +166,27 @@
       // 좌석 클릭 처리 함수
       const handleSeatClick = (index) => {
         const MAX_SELECTION = 100;
-      console.log(`좌석 ${index} 클릭됨`);
+        let updatedSeats;
 
-      let updatedSeats;
-
-      if (selectedSeats.value.some(seat => seat.uniqueSeatId === index)) {
-        // 좌석이 이미 선택된 경우
-        updatedSeats = selectedSeats.value.filter(seat => seat.uniqueSeatId !== index);
-      } else {
-        // 좌석이 선택되지 않은 경우
-        if (selectedSeats.value.length >= MAX_SELECTION) {
-          alert(`최대 ${MAX_SELECTION}개의 좌석만 선택할 수 있습니다.`);
-          return;
+        if (selectedSeats.value.some(seat => seat.uniqueSeatId === index)) {
+          // 좌석이 이미 선택된 경우
+          updatedSeats = selectedSeats.value.filter(seat => seat.uniqueSeatId !== index);
+        } else {
+          // 좌석이 선택되지 않은 경우
+          if (selectedSeats.value.length >= MAX_SELECTION) {
+            alert(`최대 ${MAX_SELECTION}개의 좌석만 선택할 수 있습니다.`);
+            return;
+          }
+          updatedSeats = [...selectedSeats.value, { seat_no: index, uniqueSeatId: index }];
+          clickCount.value += 1;
         }
-        updatedSeats = [...selectedSeats.value, { seat_no: index, uniqueSeatId: index }];
-        clickCount.value += 1;
-      }
 
-      selectedSeats.value = updatedSeats;
-      countSelectedSeats.value = updatedSeats.length;
+        selectedSeats.value = updatedSeats;
+        countSelectedSeats.value = updatedSeats.length;
 
-    };
+      };
   
-      // 입찰 기간을 서버에 전송하는 함수
+      // 입찰 기간을 서버에 전송하는 함수 : 현재는 managematch에서 처리
       const handleInputSubmit = async () => {
         if (!startDate.value || !closeDate.value || !startTime.value || !closeTime.value) {
           alert('입찰 기간의 시작 날짜/시간과 종료 날짜/시간을 모두 입력해야 합니다.');
