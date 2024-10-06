@@ -1,0 +1,81 @@
+/* 전체 페이지 스크롤 방지 */
+body {
+    /* overflow: hidden; */
+    display: flex;
+    font-family: Arial, sans-serif;
+    margin: 0; /* 기본 마진 제거 */
+    justify-content: center;
+    align-items: center;
+  }
+  .common-container {
+    font-size: 16px; /* 폰트 크기 */
+    padding: 0px;
+    display: flex;
+    flex-direction: column;
+    height:max-content;
+  }
+  .input-box {
+    width: 500px;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    height: auto;
+  }
+  input, select{
+    width: 100%;
+    height: 50px;
+    margin-top: 5px;
+    margin-bottom: 2px;
+    border: 1px solid #ddd;
+    border-radius: 2px;
+  }
+  .medium-button {
+    width: 200px;
+    height: 30px;
+    padding: 10px;
+    border: 1px solid #918e8e;
+    background-color: #f8fafc;
+    color: #2e2d2d;
+    font-size: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  table {
+    width: 100%;
+    font-size: 16px; /* 원하는 폰트 크기로 설정 */
+    border-collapse: collapse; /* 테두리 겹침 방지 */
+
+  }
+  th, td {
+    border: 1px solid #ddd; /* 연한 회색 테두리 */
+    font-size: 16px; /* 원하는 글자 크기로 설정 */
+  }
+
+  th {
+    background-color: #f4f4f4; /* 헤더 배경색 */
+  }
+  table input {
+    border: none; /* 테두리 제거 */
+    outline: none; /* 포커스 시 테두리 제거 */
+  }
+  table select {
+    border: none; /* 테두리 제거 */
+    outline: none; /* 포커스 시 테두리 제거 */
+  }
+
+  .small-radio-button label, input[type="radio"] {
+    width: 20px; /* 버튼의 너비 조정 */
+    height: 20px; /* 버튼의 높이 조정 */
+    margin-right: 5px; /* 버튼과 텍스트 사이의 간격 조정 */
+    vertical-align: middle; /* 버튼과 텍스트를 수평으로 맞춤 */
+    font-size: 12px;
+  }
+    /* Add media queries for responsiveness */
+    @media (max-width: 600px) {
+      .common-container {
+        /* Add responsive styles as needed */
+      }
+    }
