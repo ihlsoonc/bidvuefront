@@ -16,7 +16,7 @@
           <br/>
           <label><strong>{{ match.match_name }}{{ match.round }} {{ match.venue_name }}</strong></label>
           <br/>
-          <label><strong>경기 일시:</strong></label>{{formatTimeToLocal(match.start_datetime)}} ~ {{ formatTimeToLocal(match.end_datetime)}}
+          <label><strong>경기 일시:</strong></label>{{match.start_date}}일 {{match.start_time}}~ {{ match.end_time}}
           <br/>
           <label><strong>입찰 기간:</strong></label>{{formatTimeToLocal(match.bid_open_datetime)}} ~ {{ formatTimeToLocal(match.bid_close_datetime)}}
           <span v-if = "isAdmin">

@@ -10,8 +10,8 @@
                 <th>경기장 이름</th>
                 <th>경기명</th>
                 <th>라운드</th>
-                <th>시작 일시</th>
-                <th>종료 일시</th>
+                <th>일자</th>
+                <th>시간</th>
                 <th>입찰 가능 여부</th>
                 <th>승인상태</th>
                 <th>첨부 화일</th>
@@ -26,10 +26,10 @@
                 <td>{{ match.match_name }}</td>
                 <td>{{ match.round }}</td>
                 <td>
-                  <p>{{ formatTimeToLocal(match.start_datetime) }}</p>
+                  <p>{{ match.start_date}}일</p>
                 </td>
                 <td>
-                  <p>{{ formatTimeToLocal(match.end_datetime) }}</p>
+                  <p>{{ match.end_time}}~{{ match.end_time}}</p>
                 </td>
 
                 <td>{{ match.is_bid_available === 1 ? '입찰 가능' : '입찰 불가능' }}</td>

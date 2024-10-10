@@ -5,7 +5,7 @@
       <div class="info-box">
         <p>경기번호 ({{ bidStatus.match_no }}) {{matchRound}} <span class="bold-text">{{ openStatus }}</span></p>
         <div class="info-item">
-          <label>경기 시간</label>{{ formatTimeToLocal(bidStatus.start_datetime) }} ~ {{ formatTimeToLocal(bidStatus.end_datetime) }}
+          <label>경기 시간</label>{{ bidStatus.start_date}}일 {{ bidStatus.start_time}}~ {{ bidStatus.end_time }}
         </div>
         <div class="info-item">
           <label>입찰 기간</label>{{ formatTimeToLocal(bidStatus.bid_open_datetime) }} ~ {{ formatTimeToLocal(bidStatus.bid_close_datetime) }}

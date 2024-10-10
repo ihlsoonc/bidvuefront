@@ -1,246 +1,165 @@
 <template>
   <div class="common-container">
     <div v-if="!venueArray || venueArray.length == 0" class="message-box ">현재 정보가 없습니다.</div>
-      <div>
-        <br/>
-        <h5>경기 정보</h5>
-        <table v-if="matchArray.length > 0">
-          <thead>
-            <tr>
-              <th>경기 번호</th>
-              <th>경기장 이름</th>
-              <th>경기명</th>
-              <th>라운드</th>
-              <th>시작 일시</th>
-
-              <th>입찰 가능 여부</th>
-              <th>입찰 개시</th>
-
-              <th>승인 상태</th>
-              <th>첨부 보기</th>
-              <th>변경</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(match, index) in matchArray" :key="index">
-              <td>{{ match.match_no }}</td>
-              <td>{{ match.venue_name }}</td>
-              <td>{{ match.match_name }}</td>
-              <td>{{ match.round }}</td>
-              <td class="table-cell">
-                <p>{{ formatTimeToLocal(match.start_datetime) }} ~ {{ formatTimeToLocal(match.end_datetime) }}</p>
-              </td>
-              <td>{{ match.is_bid_available === 1 ? '입찰 가능' : '입찰 불가능' }}</td>
-              <td class="table-cell">
-                <p>{{ formatTimeToLocal(match.bid_open_datetime) }} ~ {{ formatTimeToLocal(match.bid_close_datetime) }}</p>
-              </td>
-              <td>{{ match.approved === 'Y' ? '승인' : '미승인' }}</td>
-              <!-- <td>{{ match.filename_attached }}</td> -->
-              <td>
-                <button
-                  @click="handleDownload(index)"
-                  :class="{ active: selectedDownloadButton === index }"
-                  class="small-button"
-                >
-                  첨부보기
-                </button>
-              </td>
-              <td>
-                <div v-if="match.approved !== 'Y'">
-                <button
-                  @click="handleUpdate(index)"
-                  :class="{ active: selectedUpdateButton === index }"
-                  class="small-button"
-                >
+    <div>
+      <br/>
+      <h5>경기 정보</h5>
+      <table v-if="matchArray.length > 0">
+        <thead>
+          <tr>
+            <th>경기 번호</th>
+            <th>경기장</th>
+            <th>경기명</th>
+            <th>라운드</th>
+            <th>경기 시간</th>
+            <th>입찰 가능 여부</th>
+            <th>입찰 기간</th>
+            <th>승인 상태</th>
+            <th>첨부 보기</th>
+            <th>변경</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(match, index) in matchArray" :key="index">
+            <td>{{ match.match_no }}</td>
+            <td>{{ match.venue_name }}</td>
+            <td>{{ match.match_name }}</td>
+            <td>{{ match.round }}</td>
+            <td class="table-cell">
+              <p>{{ match.start_date }}일 {{ match.start_time }} ~ {{ match.end_time }}</p>
+            </td>
+            <td>{{ match.is_bid_available === 1 ? '입찰 가능' : '입찰 불가능' }}</td>
+            <td class="table-cell">
+              <p>{{ formatTimeToLocal(match.bid_open_datetime) }} ~ {{ formatTimeToLocal(match.bid_close_datetime) }}</p>
+            </td>
+            <td>{{ match.approved === 'Y' ? '승인' : '미승인' }}</td>
+            <td>
+              <button @click="handleDownload(index)" :class="{ active: selectedDownloadButton === index }" class="small-button">
+                첨부보기
+              </button>
+            </td>
+            <td>
+              <div v-if="match.approved !== 'Y'">
+                <button @click="handleUpdate(index)" :class="{ active: selectedUpdateButton === index }" class="small-button">
                   수정
                 </button>
-                <button
-                  @click="handleDelete(index)"
-                  :class="{ active: selectedDeleteButton === index }"
-                  class="small-button"
-                >
+                <button @click="handleDelete(index)" :class="{ active: selectedDeleteButton === index }" class="small-button">
                   삭제
                 </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <div class="buttons-container">
-      <button 
-        :class="['action-button', { 'action-button-disabled': canUpdate || canDelete }]"
-        @click="handleInsert"
-        :disabled="canUpdate || canDelete"
-      > 
+      <button :class="['action-button', { 'action-button-disabled': canUpdate || canDelete }]" @click="handleInsert" :disabled="canUpdate || canDelete">
         경기 추가
       </button>
     </div>
     <div v-if="message" class="message-box">{{ message }}</div>
-    <div v-if="message" class="message-box">{{ message2 }}</div>
+    <div v-if="message2" class="message-box">{{ message2 }}</div>
 
     <div v-if="canInsert || canUpdate || canDelete" class="content-container">
-      <div>
-        <br/>
-        <div v-if="guideMessage" class="message-box">{{ guideMessage }}</div>
-        <table>
-          <tbody>
-            <tr v-if ="canUpdate|| canDelete">
-              <td>경기 번호</td>
-              <td :class="['table-cell', { disabled: canUpdate }]">
-                <input
-                  type="number"
-                  v-model="matchData.matchNumber"
-                  readonly
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>경기장 코드</td>
-              <td class="table-cell">
-                <select
-                  v-model="matchData.venueCd"
-                  :disabled="!canInsert && !canUpdate"
-                  @change="updateVenueName"
-                >
-                  <option value="">선택하세요</option>
-                  <option v-for="venue in venueArray" :key="venue.venue_cd" :value="venue.venue_cd">
-                    {{ venue.venue_cd }}
-                  </option>
-                </select>
-              </td>
-            </tr>
-            <tr>
-              <td>경기장 이름</td>
-              <td class="table-cell">
-                <input
-                  type="text"
-                  v-model="matchData.venueName"
-                  disabled
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>경기명</td>
-              <td class="table-cell">
-                <input
-                  type="text"
-                  placeholder="이름은 30자 이내입니다."
-                  v-model="matchData.matchName"
-                  @input="handleInputChange('matchName', $event.target.value)"
-                  :readonly="canDelete"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>라운드명</td>
-              <td class="table-cell">
-                <input
-                  type="text"
-                  placeholder="이름은 30자 이내입니다."
-                  v-model="matchData.round"
-                  @input="handleInputChange('round', $event.target.value)"
-                  :readonly="canDelete"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>시작 일시</td>
-              <td class="table-cell">
-                <input
-                  type="datetime-local"
-                  v-model="matchData.startTime"
-                  @input="handleInputChange('startTime', $event.target.value)"
-                  :readonly="canDelete"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>종료 일시</td>
-              <td class="table-cell">
-                <input
-                  type="datetime-local"
-                  v-model="matchData.endTime"
-                  @input="handleInputChange('endTime', $event.target.value)"
-                  :readonly="canDelete"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>입찰 개시</td>
-              <td class="table-cell">
-                <input
-                  type="datetime-local"
-                  v-model="matchData.bidOpenTime"
-                  @input="handleInputChange('bidOpenTime', $event.target.value)"
-                  :readonly="canDelete"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>입찰 종료</td>
-              <td class="table-cell">
-                <input
-                  type="datetime-local"
-                  v-model="matchData.bidCloseTime"
-                  @input="handleInputChange('bidCloseTime', $event.target.value)"
-                  :readonly="canDelete"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>입찰 가능 여부</td>
-              <td>
-                <select
-                  v-model="matchData.isBidAvailable"
-                  @change="handleInputChange('isBidAvailable', $event.target.value)"
-                  :readonly="canDelete"
-                >
-                  <option :value="1">입찰 가능</option>
-                  <option :value="0">입찰 불가능</option>
-                </select>
-              </td>
-            </tr>
-            <tr>
-              <td>대회 정보 첨부</td>
-              <td class="table-cell">
-                <input
-                  type="file"
-                  @change="handleFileChange"
-                  :readonly="canDelete"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>첨부화일명</td>
-              <td class="table-cell">
-                <input
-                  type="text"
-                  v-model="matchData.fileName"
-                  disabled
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
+     <div>
+      <br/>
+      <div v-if="guideMessage" class="message-box">{{ guideMessage }}</div>
+      <table>
+        <tbody>
+          <tr>
+            <td>경기 번호</td>
+            <td class="table-cell">
+            <input type="text"  v-model="matchData.matchNumber"  readonly />
+            </td>
+          </tr>
+          <tr>
+            <td>경기장 코드</td>
+            <td class="table-cell">
+              <select v-model="matchData.venueCd" :disabled="!canInsert && !canUpdate || canDelete" @change="updateVenueName">
+                <option value="">선택하세요</option>
+                <option v-for="venue in venueArray" :key="venue.venue_cd" :value="venue.venue_cd">{{ venue.venue_cd }}</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>경기장</td>
+            <td class="table-cell">
+              <input type="text" v-model="matchData.venueName" disabled />
+            </td>
+          </tr>
+          <tr>
+            <td>경기명</td>
+            <td class="table-cell">
+              <input type="text" placeholder="이름은 30자 이내입니다." v-model="matchData.matchName" @input="handleInputChange('matchName', $event.target.value)" :disabled="canDelete" />
+            </td>
+          </tr>
+          <tr>
+            <td>라운드명</td>
+            <td class="table-cell">
+              <input type="text" placeholder="이름은 30자 이내입니다." v-model="matchData.round" @input="handleInputChange('round', $event.target.value)" :disabled="canDelete" />
+            </td>
+          </tr>
+          <tr>
+            <td>경기 일자</td>
+            <td class="table-cell">
+              <input type="date" v-model="matchData.startDate" @input="handleInputChange('startDate', $event.target.value)" :disabled="canDelete" />
+            </td>
+          </tr>
+          <tr>
+            <td>경기 시작 시간</td>
+            <td class="table-cell">
+              <input type="time" v-model="matchData.startTime" @input="handleInputChange('startTime', $event.target.value)" :disabled="canDelete" />
+            </td>
+          </tr>
+          <tr>
+            <td>경기 종료 시간</td>
+            <td class="table-cell">
+              <input type="time" v-model="matchData.endTime" @input="handleInputChange('endTime', $event.target.value)" :disabled="canDelete" />
+            </td>
+          </tr>
+          <tr>
+            <td>입찰 개시</td>
+            <td class="table-cell">
+              <input type="datetime-local" v-model="matchData.bidOpenTime" @input="handleInputChange('bidOpenTime', $event.target.value)" :disabled="canDelete" />
+            </td>
+          </tr>
+          <tr>
+            <td>입찰 종료</td>
+            <td class="table-cell">
+              <input type="datetime-local" v-model="matchData.bidCloseTime" @input="handleInputChange('bidCloseTime', $event.target.value)" :disabled="canDelete" />
+            </td>
+          </tr>
+          <tr>
+            <td>입찰 가능 여부</td>
+            <td>
+              <select v-model="matchData.isBidAvailable" @change="handleInputChange('isBidAvailable', $event.target.value)" :disabled="canDelete">
+                <option :value="1">입찰 가능</option>
+                <option :value="0">입찰 불가능</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>대회 정보 첨부</td>
+            <td class="table-cell">
+              <input type="file" @change="handleFileChange" :disabled="canDelete" />
+            </td>
+          </tr>
+          <tr>
+            <td>첨부화일명</td>
+            <td class="table-cell">
+              <input type="text" v-model="matchData.fileName" disabled />
+            </td>
+          </tr>
+        </tbody>
+      </table>
         <div class="buttons-containers">
-          <button
-            :class="['submit-button', { 'submit-button-disabled': !canInsert && !canUpdate && !canDelete }]"
-            @click="handleSubmit"
-            :disabled="!canInsert && !canUpdate && !canDelete"
-          >
+          <button :class="['submit-button', { 'submit-button-disabled': !canInsert && !canUpdate && !canDelete }]" @click="handleSubmit" :disabled="!canInsert && !canUpdate && !canDelete">
             확인
           </button>
-          <button
-            :class="['action-button', { 'submit-button-disabled': !canInsert && !canUpdate && !canDelete }]"
-            @click="handleSubmitCancel"
-            :disabled="!canInsert && !canUpdate && !canDelete"
-          >
+          <button :class="['action-button', { 'submit-button-disabled': !canInsert && !canUpdate && !canDelete }]" @click="handleSubmitCancel" :disabled="!canInsert && !canUpdate && !canDelete">
             취소
           </button>
-
         </div>
       </div>
     </div>
@@ -257,6 +176,7 @@ import { formatTimeToLocal } from '../utils/commonFunction';
 const router = useRouter();
 const sessionUserId = ref('');
 const sessionUserType = ref('');
+const sessionTelno = ref('');
 const matchArray = ref([]);
 const matchData = ref({
   matchNumber: '',
@@ -421,15 +341,18 @@ const handleDownload = async (index) => {
 
 const setNewMatchData = (index) => {
   const match = matchArray.value[index];
-  
+
   matchData.value = {
     matchNumber: match.match_no,
     venueCd: match.venue_cd,
     venueName: match.venue_name,
     matchName: match.match_name,
     round: match.round,
-    startTime: match.start_datetime,
-    endTime: match.end_datetime,
+    // startDate는 YYYY-MM-DD 형식으로 변환
+    startDate: match.start_date ? new Date(match.start_date).toISOString().slice(0, 10) : '',
+    // startTime과 endTime을 HH:MM 형식으로 변환
+    startTime: match.start_time ? match.start_time.slice(0, 5) : '',
+    endTime: match.end_time ? match.end_time.slice(0, 5) : '',
     bidOpenTime: match.bid_open_datetime,
     bidCloseTime: match.bid_close_datetime,
     isBidAvailable: match.is_bid_available,
@@ -437,11 +360,11 @@ const setNewMatchData = (index) => {
   };
 };
 
+
 const handleSubmit = async () => {
   try {
     if (!canDelete.value && !validateInput()) return;
-
-    const requestData = { ...matchData.value, userId: sessionUserId.value, userType:sessionUserType.value};
+    const requestData = { ...matchData.value, telno: sessionTelno.value, userType:sessionUserType.value};
     let response;
     if (canInsert.value) {
       response = await axios.post(API.ADD_MATCH, requestData);
@@ -470,7 +393,6 @@ const handleFileUpload = async () => {
   if (matchData.value.file) {
     const formData = new FormData();
     formData.append('file', matchData.value.file);
-    // alert('upload called');
     try {
       // 서버로 파일 업로드
       const response = await axios.post(API.UPLOAD_MATCHINFO, formData, {
@@ -495,10 +417,13 @@ const handleSubmitCancel = () => {
 };
 
 const validateInput = () => {
-  const { venueCd, matchName, round, startTime, endTime, bidOpenTime, bidCloseTime, isBidAvailable } = matchData.value;
-  
-  // 필드 중 하나라도 비어있거나(isBidAvailable을 제외) 기본값이라면 경고 표시
+  const { venueCd, matchName, round, startDate, startTime, endTime, bidOpenTime, bidCloseTime, isBidAvailable } = matchData.value;
 
+  // bidOpenTime과 bidCloseTime을 먼저 Date 객체로 변환
+  const bidStartDateTime = new Date(bidOpenTime);
+  const bidEndDateTime = new Date(bidCloseTime);
+
+  // 필드 중 하나라도 비어있거나(isBidAvailable을 제외) 기본값이라면 경고 표시
   if (!venueCd) {
     alert("경기장을 선택해 주세요.");
     return false;
@@ -514,49 +439,53 @@ const validateInput = () => {
     return false;
   }
 
+  if (!startDate) {
+    alert("경기 일자를 입력해 주세요.");
+    return false;
+  }
+
   if (!startTime) {
-    alert("시작 일시를 입력해 주세요.");
+    alert("시작 시간을 입력해 주세요.");
     return false;
   }
 
   if (!endTime) {
-    alert("종료 일시를 입력해 주세요.");
+    alert("종료 시간을 입력해 주세요.");
     return false;
   }
-  
+
+  // 입찰 종료 시간이 입찰 시작 시간보다 커야 함
+  if (bidEndDateTime <= bidStartDateTime) {
+    alert("입찰 마감시간은 입찰 시작시간보다 커야 합니다.");
+    return false;
+  }
+
+  // 입찰 종료 시간이 경기 시작 시간보다 크면 안 됨
+  if (bidEndDateTime >= new Date(startDate)) {
+    alert("입찰 종료 시간은 경기 시작 시간보다 작아야 합니다.");
+    return false;
+  }
+
+  // 경기 종료 시간이 경기 시작 시간보다 커야 함
+  if (new Date(endTime) <= new Date(startTime)) {
+    alert("경기 종료 시간은 시작 시간보다 커야 합니다.");
+    return false;
+  }
+
   if (isBidAvailable === undefined || isBidAvailable === "") {
     alert("입찰 구분을 선택해 주세요.");
-    return false;
-  }
-
-  const start = new Date(startTime);
-  const end = new Date(endTime);
-
-  if (end <= start) {
-    alert("종료시간은 시작시간보다 커야 합니다.");
-    return false;
-  }
-
-  const bstart = new Date(bidOpenTime);
-  const bend = new Date(bidCloseTime);
-
-  if (bend <= bstart) {
-    alert("입찰 마감시간은 시작시간보다 커야 합니다.");
-    return false;
-  }
-  // 입찰 종료 시간이 경기 시작 시간보다 커서는 안됨
-  if (bend >= start) {
-    alert("입찰 종료 시간은 경기 시작 시간보다 작아야 합니다.");
     return false;
   }
 
   return true;
 };
 
+
 const fetchSessionUserId = async () => {
       try {
         const response = await axios.get(API.GET_SESSION_USERID, { withCredentials: true });
         sessionUserId.value = response.data.userId;
+        sessionTelno.value = response.data.telno;
         sessionUserType.value = response.data.userType;
         await fetchVenues();
         await fetchMatches()
@@ -574,14 +503,16 @@ const handleFileChange = (event) => {
 const resetForm = () => {
   matchData.value = {
     matchNumber: '',
+    sessionTelno:'',
     venueCd: '',
     venueName: '',
     matchName: '',
     round: '',
+    startDate:'',
     startTime: '',
     endTime: '',
-    bidStartTime: '',
-    bidEndTime: '',
+    bidOpenTime: '',
+    bidCloseTime: '',
     isBidAvailable: 1,
     fileName: ''
   };
