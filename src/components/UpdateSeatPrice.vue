@@ -1,7 +1,7 @@
 <template>
   <div class="common-container">
     <BidStatus :bidStatus="bidStatus" />
-    <div class="content-container-column">
+    <div class="flexcolum-container">
     <br/>
       <div class="buttons-container" v-if="canUpdate">
         <button @click="handleCreateNewArray">좌석일괄 생성</button>
@@ -9,77 +9,80 @@
         <button @click="handleAddRow">새로운 행추가</button>
 
       </div>
-      <div ><h6> 좌석별 최소 입찰 가격 {{ message }}</h6></div>
-      <div v-if="showPrompt" class="input-prompt">
-        <div class="input-container">
-          <label>
-            생성할 좌석수:
-            <input type="number" v-model.number="seatCount" max="999" />
-          </label>
-          <label>
-            시작 번호:
-            <input type="number" v-model.number="startSeatNumber" max="999" />
-          </label>
-          <label>
-            기본 가격:
-            <input type="number" v-model.number="basePrice" max="99999" />
-          </label>
-          <div >
-            <button @click="handleSeatCountSubmit" class="small-button">생성</button>
-            <button @click="hidePrompt" class="small-button">취소</button>
+      <div >
+        <div ><h6> 좌석별 최소 입찰 가격 </h6></div>          
+        <div v-if="message" class="message-box">{{ message }}</div>
+        <div v-if="showPrompt" class="input-prompt">
+          <div class="input-container">
+            <label>
+              생성할 좌석수:
+              <input type="number" v-model.number="seatCount" max="999" />
+            </label>
+            <label>
+              시작 번호:
+              <input type="number" v-model.number="startSeatNumber" max="999" />
+            </label>
+            <label>
+              기본 가격:
+              <input type="number" v-model.number="basePrice" max="99999" />
+            </label>
+            <div >
+              <button @click="handleSeatCountSubmit" class="small-button">생성</button>
+              <button @click="hidePrompt" class="small-button">취소</button>
+            </div>
           </div>
         </div>
+        <table>
+          <thead>
+            <tr>
+              <th>좌석 번호</th>
+              <th>열 번호</th>
+              <th>컬럼 번호</th>
+              <th>최소 입찰가</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody class="input-table">
+            <tr v-for="(seat, index) in seatArray" :key="index">
+              <td>
+                <input
+                  type="text"
+                  v-model="seat.seat_no"
+                  @input="handleInputChange(index, 'seat_no', seat.seat_no)"
+                  max="999"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  v-model="seat.row_no"
+                  @input="handleInputChange(index, 'row_no', seat.row_no)"
+                  max="999"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  v-model="seat.col_no"
+                  @input="handleInputChange(index, 'col_no', seat.col_no)"
+                  max="999"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  v-model.number="seat.seat_price"
+                  @input="handleInputChange(index, 'seat_price', seat.seat_price)"
+                  max="99999"
+                />
+              </td>
+              <td v-if="canUpdate">
+                <button @click="handleRemoveRow(index)" class="small-button">삭제</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <table>
-        <thead>
-          <tr>
-            <th>좌석 번호</th>
-            <th>열 번호</th>
-            <th>컬럼 번호</th>
-            <th>최소 입찰가</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody class="input-table">
-          <tr v-for="(seat, index) in seatArray" :key="index">
-            <td>
-              <input
-                type="text"
-                v-model="seat.seat_no"
-                @input="handleInputChange(index, 'seat_no', seat.seat_no)"
-                max="999"
-              />
-            </td>
-            <td>
-              <input
-                type="text"
-                v-model="seat.row_no"
-                @input="handleInputChange(index, 'row_no', seat.row_no)"
-                max="999"
-              />
-            </td>
-            <td>
-              <input
-                type="text"
-                v-model="seat.col_no"
-                @input="handleInputChange(index, 'col_no', seat.col_no)"
-                max="999"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                v-model.number="seat.seat_price"
-                @input="handleInputChange(index, 'seat_price', seat.seat_price)"
-                max="99999"
-              />
-            </td>
-            <td v-if="canUpdate">
-              <button @click="handleRemoveRow(index)" class="small-button">삭제</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
     </div>
   </div>
 </template>
@@ -140,7 +143,7 @@ export default {
         const response = await axios.get(API.GET_SEATPRICE, { params: { matchNumber: sessionMatchNumber } });
         seatArray.value = response.data.map(seat => ({
           ...seat,
-          matchNumber: sessionMatchNumber, // matchNumber를 현재 매치 번호로 설정
+          matchNumber: sessionMatchNumber, // matchNumber를 로컬세션 매치 번호로 설정
         }));
         originalSeats.value = JSON.parse(JSON.stringify(response.data));
       } catch (error) {
@@ -189,6 +192,7 @@ export default {
           // 삭제 후 배열 비우기
           seatArray.value = seatArray.value.filter(seat => !seatArrayToDelete.value.includes(seat.seat_no));
           seatArrayToDelete.value = [];
+          message.value = response.data.message;
         } else {
           alert('좌석 삭제에 실패했습니다.');
         }
@@ -224,9 +228,8 @@ export default {
 
           if (response.status === 200) {
             alert('좌석이 성공적으로 업데이트되었습니다.');
-          } else {
-            alert('좌석 업데이트에 실패했습니다.');
-          }
+            message.value = response.data.message;
+          } 
         } catch (error) {
           alert('좌석 업데이트 중 오류가 발생했습니다.');
         }

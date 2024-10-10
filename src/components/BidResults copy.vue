@@ -84,7 +84,6 @@
       const sessionUserId = ref('');
       const matchNumber = ref(0);
       const bidStatus = ref({});
-      const biddedSeatCount = ref(0);
       const canAwardBid = ref(false);
       const selectedSeats = ref([]);
       const allSeatBidArray = ref([]);
@@ -136,41 +135,28 @@
         await fetchAllBids();
       };
 
-  // 좌석 클릭 처리 함수
-  const handleSeatClick = (index) => {
-    const MAX_SELECTION = 100;
-    let updatedSeats;
+      // 좌석 클릭 처리 함수
+      const handleSeatClick = (index) => {
+        const MAX_SELECTION = 100;
+        let updatedSeats;
 
-    // 클릭된 좌석이 이미 선택된 좌석인지 확인
-    if (selectedSeats.value.some(seat => seat.uniqueSeatId === index)) {
-      // 이미 선택된 좌석이면 해당 좌석을 선택 목록에서 제거
-      updatedSeats = selectedSeats.value.filter(seat => seat.uniqueSeatId !== index);
-    } else {
-      // 좌석이 선택되지 않은 경우
-      if (selectedSeats.value.length >= MAX_SELECTION) {
-        alert(`최대 ${MAX_SELECTION}개의 좌석만 선택할 수 있습니다.`);
-        return;
-      }
-      
-      // allSeatBidArray에서 해당 좌석 데이터 가져오기
-      const seatData = allSeatBidArray.value.find(seat => seat.uniqueSeatId === index);
-      
-      if (seatData) {
-        // 좌석 데이터를 selectedSeats에 추가
-        updatedSeats = [...selectedSeats.value, seatData];
-        clickCount.value += 1;
-      } else {
-        // 좌석 데이터를 찾지 못한 경우
-        alert('해당 좌석 정보를 찾을 수 없습니다.');
-        return;
-      }
-    }
+        if (selectedSeats.value.some(seat => seat.uniqueSeatId === index)) {
+          // 좌석이 이미 선택된 경우
+          updatedSeats = selectedSeats.value.filter(seat => seat.uniqueSeatId !== index);
+        } else {
+          // 좌석이 선택되지 않은 경우
+          if (selectedSeats.value.length >= MAX_SELECTION) {
+            alert(`최대 ${MAX_SELECTION}개의 좌석만 선택할 수 있습니다.`);
+            return;
+          }
+          updatedSeats = [...selectedSeats.value, { seat_no: index, uniqueSeatId: index }];
+          clickCount.value += 1;
+        }
 
-  // 선택된 좌석 목록 업데이트
-  selectedSeats.value = updatedSeats;
-  countSelectedSeats.value = updatedSeats.length;
-};
+        selectedSeats.value = updatedSeats;
+        countSelectedSeats.value = updatedSeats.length;
 
+      };
   
       // 낙찰을 진행하는 함수
       const handleAwardBid = async () => {
@@ -243,53 +229,52 @@
           const response = await axios.get(API.GET_BIDSTATUS, { params: { matchNumber: sessionMatchNumber } }, { withCredentials: true });
           if (response.status === 200 && response.data) {
             bidStatus.value = response.data;
-            if (bidStatus.value.bidStatusCode == 'C' && biddedSeatCount.value >0)
+            if (bidStatus.value.bidStatusCode == 'C')
                 {canAwardBid.value = true}
           }
         } catch (error) {
           handleError(error);
         }
       };
-    const fetchAllBids = async () => {
-    try {
-      const response = await axios.get(API.GET_ALL_BIDS, {
-        params: { userId: sessionUserId.value, matchNumber: matchNumber.value }
-      });
-
-      // 서버에서 좌석별 입찰자 수와 최고 입찰 금액을 포함하여 데이터를 가져옴
-      allSeatBidArray.value = response.data.map(seat => {
-        const uniqueSeatId = Number(seat.seat_no); // seat_no를 숫자로 변환
-        if (seat.total_bidders > 0)
-          {biddedSeatCount.value +=1}
-        return {
-          ...seat,
-          uniqueSeatId: uniqueSeatId, // 변환된 uniqueSeatId 할당
-        };
+      const fetchAllBids = async () => {
+      try {
+        const response = await axios.get(API.GET_ALL_BIDS, {
+          params: { userId: sessionUserId.value, matchNumber: matchNumber.value }
         });
 
-      // total_bidders가 0보다 큰 좌석을 selectedSeats에 추가
-      selectedSeats.value = allSeatBidArray.value.filter(seat => seat.total_bidders > 0);
-      countSelectedSeats.value = selectedSeats.value.length;
-      } catch (error) {
-        handleError(error);
-      }
-  };
-
-  
-    // 총 입찰 좌석 수 계산
-    const calculateBiddedSeats = () => {
-      const count = selectedSeats.value.filter(seat => seat.total_bidders > 0).length;
-      countbiddedSeats.value = count;
+        // 서버에서 좌석별 입찰자 수와 최고 입찰 금액을 포함하여 데이터를 가져옴
+        allSeatBidArray.value = response.data.map(seat => {
+          return {
+            ...seat,
+            uniqueSeatId :seat.seat_no,
+            seat_no:seat.seat_no,
+            highest_bid_amount: seat.current_bid_amount || 0, // 최고 입찰 금액 추가
+            bid_count: seat.total_bidders || 0, // 입찰자 수 추가
+          };
+        });
+        // total_bidders가 0보다 큰 좌석을 selectedSeats에 추가
+        selectedSeats.value = allSeatBidArray.value.filter(seat => seat.total_bidders > 0);
+        countSelectedSeats.value = selectedSeats.value.length;
+        } catch (error) {
+          handleError(error);
+        }
     };
 
-    const handleError = (error) => {
-    if (error.response) {
-      message.value = error.response.data;
-    } else if (error.request) {
-      message.value = messageCommon.ERR_NETWORK;
-    } else {
-      message.value = messageCommon.ERR_ETC;
-    }
+  
+      // 총 입찰 좌석 수 계산
+      const calculateBiddedSeats = () => {
+        const count = selectedSeats.value.filter(seat => seat.total_bidders > 0).length;
+        countbiddedSeats.value = count;
+      };
+  
+      const handleError = (error) => {
+      if (error.response) {
+        message.value = error.response.data;
+      } else if (error.request) {
+        message.value = messageCommon.ERR_NETWORK;
+      } else {
+        message.value = messageCommon.ERR_ETC;
+      }
   };
   
   
@@ -298,7 +283,6 @@
         matchNumber,
         bidStatus,
         canAwardBid,
-        biddedSeatCount,
         allSeatBidArray,
         selectedSeats,
         countSelectedSeats,

@@ -7,7 +7,7 @@
       <h5 style="text-align: center;">입찰 및 낙찰 현황</h5>
 
       <!-- 입찰 좌석이 없는 경우 -->
-      <div v-if="seatBidArray.length === 0" class="empty-seats">
+      <div v-if="seatBidArray.length === 0" class="message-box">
         입찰 좌석이 없습니다.
       </div>
 
@@ -35,10 +35,10 @@
             </div>
             <!-- 아코디언: selectedHistoryButton이 현재 인덱스와 같을 때만 열기 -->
             <div v-if=seat.historyShow class="accordion-content">
-              <h6>입찰 이력 : 입찰액, 입찰 시각</h6>
-              <ul >
+              <h6>입찰액 &nbsp;&nbsp;&nbsp;입찰 시각</h6>
+              <ul>
                 <li v-for="(history, hIndex) in seat.bidHistory" :key="hIndex">
-                  <div>{{ history.bid_amount.toLocaleString() }}원  {{ formatTimeToLocal(history.bid_at) }}</div>
+                  <div>{{ history.bid_amount.toLocaleString()}}원 &nbsp;&nbsp;&nbsp; {{ formatTimeToLocal(history.bid_at) }}</div>
                 </li>
               </ul>
             </div> <!-- 아코디언 끝 -->
@@ -47,24 +47,23 @@
       </div>
     </div>
     <!-- 결제 및 총 입찰 금액 -->
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <div>입찰가격 합계: {{ totalBidAmount.toLocaleString() }}원</div>
-      <br/>
-      <div>낙찰가격 합계:{{ totalWinAmount.toLocaleString() }}원 {{ totalWinCount }}건</div>
-      <br/>
-      <button
-        @click="handlePaySubmit"
-        :disabled="isApproved"
-        class="medium-button"
-      >
-        결제 진행
-      </button>
-      <button
-        @click="handleSelectVenue"
-        class="medium-button"
-      >
-        경기 다시 선택
-      </button>
+    <div class="columnflex-container">
+      <div>낙찰가격 합계:{{ totalWinAmount.toLocaleString() }}원 {{ totalWinCount }}건&nbsp;&nbsp;&nbsp;&nbsp;입찰가격 합계: {{ totalBidAmount.toLocaleString() }}원</div>
+      <div class="rowflex-container">        
+        <button
+          @click="handlePaySubmit"
+          :disabled="isApproved || totalWinAmount == 0"
+          class="medium-button"
+        >
+          결제 진행
+        </button>
+        <button
+          @click="handleSelectVenue"
+          class="medium-button"
+        >
+          경기 다시 선택
+        </button>
+      </div>
     </div>
 
     <!-- 새로운 입찰 입력 섹션 -->
@@ -72,7 +71,12 @@
       <h5 style="text-align: center;">새로운 입찰 입력</h5>
 
       <!-- SeatMap 컴포넌트 -->
-      <SeatMap :selectedSeats="selectedSeats" @seatClick="handleSeatClick" :disabled="isClosedBid" />
+      <SeatMap
+        :selectedSeats="selectedSeats"
+        @seatClick="handleSeatClick"
+        :disabled="isClosedBid"
+        :seatBidArray="allSeatBidArray"
+      />
 
       <!-- 선택된 좌석 정보와 입찰 금액 -->
       <div class="selected-seats">
@@ -87,7 +91,7 @@
         <!-- 최저 입찰 금액 합계와 현재 입찰 금액 -->
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <span class="spaced-span">최저 입찰 금액 합계: {{ minBidAmount }}원</span>
+            <span class="spaced-span">최저 입찰 금액 합계: {{ minBidAmount }}원</span>&nbsp;&nbsp;
             <span>현재 입찰금액: {{ bidTotal }}원</span>
           </div>
           <div class="buttons-container" v-if="selectedSeats.length > 0 && !isClosedBid">
@@ -100,7 +104,7 @@
           </div>
         </div>
       </div>
-      <p>{{ message }}</p>
+      <div v-if="message" class="message-box">{{ message }}</div>
     </div>
   </div>
 </template>
@@ -112,7 +116,6 @@ import { useRouter } from 'vue-router';
 import BidStatus from './BidStatus.vue';
 import SeatMap from './SeatMap.vue';
 import SelectedSeatsDetails from './SelectedSeatsDetails.vue';
-import { fetchSeatData } from '../utils/fetchSeatData';
 import { formatTimeToLocal } from '../utils/commonFunction';
 import { url, API, messageCommon} from '../utils/messagesAPIs.js';
 
@@ -127,6 +130,7 @@ export default {
   setup() {
     const router = useRouter();
     const sessionUserId = ref('');
+    const sessionTelno = ref('');
     const matchNumber = ref(0);
     const bidStatus = ref({});
     const isClosedBid = ref(false);
@@ -138,6 +142,7 @@ export default {
     const bidTotal = ref(0);
     const message = ref('');
     const seatBidArray = ref([]);
+    const allSeatBidArray = ref([]);
     const isApproved = ref(false);
     const isUser = ref(true);
     const paymentData = ref({});
@@ -147,7 +152,6 @@ export default {
 
     const fetchBidStatus = async (sessionMatchNumber) => {
       try {
-
         const response = await axios.get(API.GET_BIDSTATUS, {
           params: { matchNumber: sessionMatchNumber },
           withCredentials: true
@@ -164,19 +168,17 @@ export default {
     const fetchMyLast = async () => {
     try {
       const response = await axios.get(API.GET_MY_LASTBIDS, {
-        params: { userId: sessionUserId.value, matchNumber: matchNumber.value }
+        params: { telno: sessionTelno.value, matchNumber: matchNumber.value }
       });
 
       // 낙찰된 총 금액과 낙찰된 항목의 수를 계산할 변수
 
       seatBidArray.value = response.data.map(seat => {
         // 낙찰 여부에 따라 total_win_amount와 total_win_count를 업데이트
-        // if (bidStatus.value.bid_open_status === 'F' && seat.bid_won === 'Y') {
-        //   totalWinAmount.value += seat.bid_amount || 0;
-        //   totalWinCount.value++;
-        // }
+        if (bidStatus.value.bid_open_status === 'F' && seat.bid_won === 'Y') {
           totalWinAmount.value += seat.bid_amount || 0;
           totalWinCount.value++;
+        }
         return {
           ...seat,
           bidWonStatus: bidStatus.value.bid_open_status === 'F' 
@@ -199,7 +201,7 @@ export default {
     const fetchMyBids = async () => {
       try {
         const response = await axios.get(API.GET_MY_BIDS, {
-          params: { userId: sessionUserId.value, matchNumber: matchNumber.value }
+          params: { telno: sessionTelno.value, matchNumber: matchNumber.value }
         });
 
         // 서버에서 받아온 데이터를 seatBidArray에 매핑 또는 업데이트
@@ -248,6 +250,27 @@ export default {
 
     };
 
+    const fetchAllBids = async () => {
+      try {
+        const response = await axios.get(API.GET_ALL_BIDS, {
+          params: { matchNumber: matchNumber.value }
+        });
+
+        // 서버에서 좌석별 입찰자 수와 최고 입찰 금액을 포함하여 데이터를 가져옴
+        allSeatBidArray.value = response.data.map(seat => {
+          return {
+            ...seat,
+            seat_no:seat.seat_no,
+            highest_bid_amount: seat.current_bid_amount || 0, // 최고 입찰 금액 추가
+            bid_count: seat.total_bidders || 0, // 입찰자 수 추가
+          };
+        });
+
+      } catch (error) {
+        handleError(error);
+      }
+    };
+    
     const handleSeatClick = (index) => {
       selectedSeats.value = selectedSeats.value.some(seat => seat.uniqueSeatId === index)
         ? selectedSeats.value.filter(seat => seat.uniqueSeatId !== index)
@@ -258,6 +281,45 @@ export default {
         selectedSeats.value = selectedSeats.value.slice(0, MAX_SELECTION);
       }
       clickCount.value += 1;
+    };
+
+    const fetchSeatData = async (matchNumber, selectedSeats, setSelectedSeats, setMessage) => {
+      try {
+        // selectedSeats가 배열인지 확인하고 좌석 번호 배열 생성
+        const seatNoArray = selectedSeats && Array.isArray(selectedSeats) 
+          ? selectedSeats.map(seat => seat.seat_no) 
+          : [];
+
+        if (seatNoArray.length > 0) {
+          // API 요청하여 좌석별 데이터를 가져옴
+          const response = await axios.post(API.GET_BIDS_BY_SEATARRAY, { seatNoArray, matchNumber });
+          const fetchedData = response.data;
+
+          // fetchedData를 seat_no 기준으로 매핑
+          const fetchedDataMap = fetchedData.reduce((acc, data) => {
+            acc[data.seat_no] = data;
+            return acc;
+          }, {});
+
+          // selectedSeats의 각 좌석에 fetchedData를 매핑하여 업데이트
+          const updatedSeatsWithData = selectedSeats.map(seat => ({
+            ...seat,
+            ...fetchedDataMap[seat.seat_no],  // fetchedDataMap에서 데이터 가져오기
+            row_no: fetchedDataMap[seat.seat_no]?.row_no || '0',
+            col_no: fetchedDataMap[seat.seat_no]?.col_no || '0',
+            seat_price: fetchedDataMap[seat.seat_no]?.seat_price || 0,
+            total_bidders: fetchedDataMap[seat.seat_no]?.total_bidders || 0,
+            current_bid_amount: fetchedDataMap[seat.seat_no]?.current_bid_amount || 0
+          }));
+
+          // 좌석 데이터 업데이트
+          setSelectedSeats(updatedSeatsWithData);
+        }
+      } catch (error) {
+        // 에러 처리
+        setMessage && setMessage('데이터를 가져오는 중 오류가 발생했습니다.');
+        handleError(error);  // handleError 함수가 따로 정의되어 있는지 확인 필요
+      }
     };
 
     const handleBidSubmit = async () => {
@@ -282,7 +344,7 @@ export default {
           const response = await axios.post(
                           API.SUBMIT_BID, 
                           {
-                            userId: sessionUserId.value,
+                            telno: sessionTelno.value,
                             matchNumber: matchNumber.value,
                             bidArray: selectedSeats.value.map(seat => ({
                               matchNumber: seat.match_no,
@@ -313,6 +375,7 @@ export default {
             message.value = response.data.message;
             fetchMyLast();  // 나의 입찰 데이터 다시 불러오기
             fetchMyBids();  // 나의 입찰 데이터 다시 불러오기
+            fetchAllBids();
           }
         } catch (error) {
           handleError(error);
@@ -337,7 +400,7 @@ export default {
       localStorage.setItem('userId', sessionUserId.value);
       paymentData.value = {
         ...paymentData.value,
-        userId: sessionUserId.value,
+        telno: sessionTelno.value,
         price: totalWinAmount.value,
         goodName: `좌석입찰 총 ${totalWinCount.value} 건`
       };
@@ -349,7 +412,7 @@ export default {
       const redirectUrl = `${API.PG_START}?${queryString}`;
 
       // 리디렉션 실행
-     window.location.href = redirectUrl;
+      window.location.href = redirectUrl;
     }
 
     const handleError = (error) => {
@@ -395,9 +458,8 @@ export default {
       try {
         const response = await axios.get(API.GET_SESSION_USERID, { withCredentials: true });
         sessionUserId.value = response.data.userId;
-        await fetchBidStatus(matchNumber.value);
-        await fetchMyLast();
-        await fetchMyBids();
+        sessionTelno.value = response.data.telno;
+
       } catch (error) {
         alert('로그인이 필요합니다.');
       }
@@ -416,20 +478,22 @@ export default {
       const params = new URLSearchParams(queryString);
       
       // 특정 파라미터 값 가져오기
-      if (params.has('userId')) {
-        sessionUserId.value = params.get('userId');
-        alert("쿼리 ID is: " + sessionUserId.value);
+      if (params.has('telno')) {
+        sessionTelno.value = params.get('telno');
       } else {
         await fetchSessionUserId();
-        alert("세션 ID is: " + sessionUserId.value);
       }
       // const userType = params.get('userType');
-
+      await fetchBidStatus(matchNumber.value);
+      await fetchMyLast();
+      await fetchMyBids();
+      await fetchAllBids();
 
     });
 
     return {
       sessionUserId,
+      sessionTelno,
       matchNumber,
       bidStatus,
       selectedSeats,
@@ -437,12 +501,14 @@ export default {
       bidAmounts,
       bidTotal,
       seatBidArray,
+      allSeatBidArray,
       totalBidAmount,
       totalWinAmount,
       totalWinCount,
       isClosedBid,
       isApproved,
       isUser,
+      fetchSeatData,
       formatTimeToLocal,
       handleSeatClick,
       handleBidSubmit,
@@ -457,25 +523,7 @@ export default {
 </script>
 
 <style scoped>
-.empty-seats {
-  color: red;
-}
 
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-.seat-box {
-  display: flex;
-  flex-direction: column;
-  flex-wrap: nowrap;
-  justify-content: space-between;
-  border: 1px solid #ddd;
-  padding: 2px;
-  border-radius: 5px;
-  background-color: #f9f9f9;
-}
 
 .accordion-content {
   background-color: #f1f1f1;
@@ -487,9 +535,7 @@ ul {
   transition: max-height 0.2s ease-out;
 }
 
-.bold-text {
-  font-weight: bold;
-}
+
 
 /* 작은 화면을 위한 스타일 */
 @media (max-width: 500px) {

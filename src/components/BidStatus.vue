@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="!bidStatus">경기 정보를 조회중입니다.</div>
+    <div v-if="!bidStatus" class="message-box">경기 정보를 조회중입니다.</div>
     <div v-else>
       <div class="info-box">
         <p>경기번호 ({{ bidStatus.match_no }}) {{matchRound}} <span class="bold-text">{{ openStatus }}</span></p>
@@ -56,8 +56,6 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.bold-text {
-    font-weight: bold;
-}
+
 
 </style>

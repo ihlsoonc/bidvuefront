@@ -144,7 +144,7 @@ export default {
       }
       if (tableName.value === 'admin') {
         isAdmin.value = true;
-    }
+      }
       await fetchSessionUserId();
       await fetchMatches();
     });

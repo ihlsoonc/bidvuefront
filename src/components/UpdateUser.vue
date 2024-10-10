@@ -2,19 +2,23 @@
   <div class="common-container">
     <br />
     <h5>사용자 조회 및 수정</h5>
-    <div class="content-container">
       <div class="input-box">
         <!-- 사용자 조회 폼 -->
         <form @submit.prevent="handleSearch">
           <label>
-            사용자 ID 또는 전화번호:
+            전화번호:
             <input
               type="text"
               v-model="searchQuery"
               class="input"
-              placeholder="사용자 ID 또는 전화번호 입력"
+              placeholder="전화번호를 입력하세요."
+              minlength="11"
+              maxlength="11"
+              autocomplete="tel"
+              :readonly="updateMode"
             />
           </label>
+
           <div class="messagebox">{{ passwordMsg }}</div>
           <label>
             비밀번호:
@@ -23,6 +27,7 @@
               v-model="password"
               class="input"
               placeholder="비밀번호 입력"
+              :readonly="updateMode"
             />
           </label>
           <button class="submit-button" type="submit">조회</button>
@@ -30,17 +35,17 @@
 
         <!-- 사용자 정보 수정 폼 -->
 
-        <div v-if="canUpdate && userData">
+        <div v-if="updateMode && userData">
           <form @submit.prevent="handleUpdate">
-            <label>
-              사용자 ID:
+            <!-- <label>
+              전화번호:
               <input
                 type="text"
-                v-model="userData.userid"
+                v-model="userData.telno"
                 class="input"
                 readonly
               />
-            </label>
+            </label> -->
             <label>
               사용자 이름:
               <input
@@ -59,9 +64,9 @@
                 placeholder="이메일 수정"
                 @change="handleEmailChange"
               />
-              <button @click="handleEmailCheck" type="button">이메일 유효 확인</button> <!-- 이메일 확인 버튼 -->
+              <button @click="handleEmailCheck" type="button">이메일 유효 확인</button> 
             </label>
-            <label>
+            <!-- <label>
               전화번호:
               <input
                 type="text"
@@ -70,7 +75,7 @@
                 placeholder="전화번호 수정"
                 min="1"
               />
-            </label>
+            </label> -->
             <label>
               우편번호:
               <input
@@ -99,17 +104,16 @@
                 placeholder="상세 주소 수정"
               />
             </label>
-            <label>
-          사용자 타입:
-          <select
-            v-model="userData.userType"
-            class="input"
-            autocomplete="off" 
-            :disabled="hasSubmitted"
-          >
-            <option v-for="(label, key) in ADMIN_TYPES" :key="key" :value="key">
-              {{ label }}
-            </option>
+            <label v-if="!isUserTable">
+            사용자 타입:
+            <select
+              v-model="userData.userType"
+              class="input"
+              autocomplete="off" 
+            >
+              <option v-for="(label, key) in ADMIN_TYPES" :key="key" :value="key">
+                {{ label }}
+              </option>
           </select>
         </label>
             <br />
@@ -119,7 +123,6 @@
         </div>
         <div class="messagebox">{{ message }}</div>
       </div>
-    </div>
   </div>
 </template>
 
@@ -130,8 +133,8 @@ import { API, messageCommon, ADMIN_TYPES } from "../utils/messagesAPIs";
   const searchQuery = ref(""); // 검색어 (사용자 ID 또는 전화번호)
   const password = ref(""); // 비밀번호
   const tableName = ref(""); 
-  
-  const canUpdate = ref(false);
+  const updateMode = ref(false);
+  const isUserTable = ref(false);
   const validEmail = ref(true);
   const userData = ref(null); // 조회된 사용자 정보
   const passwordMsg = ref(""); // 메시지
@@ -140,11 +143,11 @@ import { API, messageCommon, ADMIN_TYPES } from "../utils/messagesAPIs";
   // 사용자 정보 조회 함수
   const handleSearch = async () => {
     try {
-      const response = await axios.post(API.GET_ADMIN_INFO, 
+      const response = await axios.post(API.GET_USER_INFO, 
         {
           query: searchQuery.value,
           password: password.value, // 비밀번호도 함께 전송
-          requestType :"query",
+          queryType :"telno",
           table :tableName.value,
         },
       );
@@ -153,7 +156,7 @@ import { API, messageCommon, ADMIN_TYPES } from "../utils/messagesAPIs";
         userData.value = response.data; // 조회된 사용자 정보 저장
         passwordMsg.value ='';
         message.value = "사용자 정보가 조회되었습니다.";
-        canUpdate.value = true;
+        updateMode.value = true;
       }
     } catch (error) {
       handleError(error);
@@ -162,20 +165,18 @@ import { API, messageCommon, ADMIN_TYPES } from "../utils/messagesAPIs";
 
   // 사용자 정보 수정 함수
   const handleUpdate = async () => {
-    // console.log("사용자",userData.value.postCode);
-    // console.log("사용자2",userData.value);
     if (!validateInput(userData)) {
       return;
     }
     try {
-      const response = await axios.post(API.UPDATE_ADMIN, {
+      const response = await axios.post(API.UPDATE_USER, {
       ...userData.value,   // userData의 모든 값들을 펼쳐서 전송
       table: tableName.value  // tableName을 본문에 포함
     });
 
     if (response.status === 200) {
       message.value = "사용자 정보가 성공적으로 수정되었습니다.";
-      canUpdate.value = false;
+      updateMode.value = false;
     }
     } catch (error) {
       handleError(error);
@@ -212,10 +213,6 @@ import { API, messageCommon, ADMIN_TYPES } from "../utils/messagesAPIs";
 
   const validateInput = (userData) => {
       const {username, email, telno, postcode} = userData.value;
-      // if (!userId || userId.trim() === "") {
-      //   alert("사용자 Id를 입력해 주세요.");
-      //   return false;
-      // }
 
       if (!username || username.trim() === "") {
         alert("사용자 이름을 입력해 주세요.");
@@ -261,7 +258,8 @@ import { API, messageCommon, ADMIN_TYPES } from "../utils/messagesAPIs";
       };
 
   const handleReset = () => {
-    canUpdate.value = false;
+    updateMode.value = false;
+    updateMode.value = false;
   };
   
   const handleError = (error) => {
@@ -279,6 +277,9 @@ import { API, messageCommon, ADMIN_TYPES } from "../utils/messagesAPIs";
       if (sessiontableName) {
         tableName.value = sessiontableName;
       }
+    if (tableName.value == 'user') {
+    isUserTable.value = true;
+    }
     password.value = ''; // 비밀번호를 빈 값으로 설정
     passwordMsg.value ='사용자 정보 수정을 위해 비밀번호를 입력해주세요.';
   });

@@ -1,31 +1,27 @@
 <template>
-  <nav class="navbar navbar-expand-sm navbar-light bg-light">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="#" src="/billiards.JPG"></a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <!-- <div class="collapse navbar-collapse" id="navbarSupportedContent"> -->
-        <div >
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <a class="nav-link" @click="handleClick('selectvenue')" :class="{ 'disabled': !isLoggedIn }">홈</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" @click="handleClick('userlogin')">로그인</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" @click="handleClick('updateuser')" :class="{ 'disabled': !isLoggedIn }">마이페이지</a>
-          </li>
+  <nav>
+    <div >
 
-          <li class="nav-item">
-            <a class="nav-link" @click="handleClick('userlogout')" :class="{ 'disabled': !isLoggedIn }">로그아웃</a>
+      <div>
+        <ul class ="rowflex-container">
+          <li>
+            <a @click="handleClick('selectvenue')" :class="{ 'disabled': !isLoggedIn }">홈</a>
+          </li>
+          <li>
+            <a @click="handleClick('userlogin')">로그인</a>
+          </li>
+          <li>
+            <a @click="handleClick('updateuser')" :class="{ 'disabled': !isLoggedIn }">사용자정보수정</a>
+          </li>
+          <li>
+            <a @click="handleClick('userlogout')" :class="{ 'disabled': !isLoggedIn }">로그아웃</a>
           </li>
         </ul>
       </div>
     </div>
   </nav>
 </template>
+
 
 <script>
 import { ref, watch, onMounted } from 'vue';

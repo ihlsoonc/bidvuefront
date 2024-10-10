@@ -7,7 +7,6 @@ import RegisterUser from '../components/RegisterUser.vue'
 import ChangeUserPassword from '../components/ChangeUserPassword.vue'
 import UpdateUser from '../components/UpdateUser.vue'
 
-// import PayBids from '../components/unused/PayBids.vue'
 import BidSeats from '../components/BidSeats.vue'
 import SelectVenue from '../components/SelectVenue.vue'
 import SelectMatch from '../components/SelectMatch.vue'
@@ -28,7 +27,7 @@ const routes = [
       { path: 'updateuser', name: 'UpdateUser', component: UpdateUser },    
       { path: 'changeuserpassword', name: 'ChangeUserPassword', component: ChangeUserPassword },
       { path: 'userlogout', name: 'UserLogout', component: UserLogout },
-      { path: 'selectvenue', name: 'SelectVenue', component: SelectVenue },
+      { path: 'selectvenue', name: 'SelectVenueUser', component: SelectVenue },
       { path: 'bidseats', name: 'BidSeats', component: BidSeats },
       { path: 'selectmatchuser', name: 'SelectMatchUser', component: SelectMatch }
     ]
@@ -44,6 +43,7 @@ const routes = [
       { path: 'registeradmin', name: 'RegisterAdmin', component: RegisterUser },  
       { path: 'updateadmin', name: 'UpdateAdmin', component: UpdateUser },  
       { path: 'changeadminpassword', name: 'ChangeAdminPassword', component: ChangeUserPassword },  
+      { path: 'selectvenueadmin', name: 'SelectVenueAdmin', component: SelectVenue },
       { path: 'selectmatch', name: 'SelectMatch', component: SelectMatch },
       { path: 'bidresults', name: 'BidResults', component: BidResults },
       { path: 'managematch', name: 'ManageMatch', component: ManageMatch },

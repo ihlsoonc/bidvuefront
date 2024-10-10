@@ -1,6 +1,6 @@
 <template>
   <div class="common-container">
-    <div class="content-container">
+    <div v-if="!venueArray || venueArray.length == 0" class="message-box ">현재 정보가 없습니다.</div>
       <div>
         <br/>
         <h5>경기 정보</h5>
@@ -66,7 +66,6 @@
             </tr>
           </tbody>
         </table>
-      </div>
     </div>
 
     <div class="buttons-container">
@@ -78,25 +77,22 @@
         경기 추가
       </button>
     </div>
+    <div v-if="message" class="message-box">{{ message }}</div>
+    <div v-if="message" class="message-box">{{ message2 }}</div>
 
     <div v-if="canInsert || canUpdate || canDelete" class="content-container">
       <div>
         <br/>
-        <h5>{{ guideMessage }}</h5>
+        <div v-if="guideMessage" class="message-box">{{ guideMessage }}</div>
         <table>
           <tbody>
-            <tr>
+            <tr v-if ="canUpdate|| canDelete">
               <td>경기 번호</td>
               <td :class="['table-cell', { disabled: canUpdate }]">
                 <input
                   type="number"
-                  placeholder="숫자 두자리를 입력하세요."
                   v-model="matchData.matchNumber"
-                  @input="handleInputChange('matchNumber', $event.target.value)"
-                  :readonly="canUpdate"
-                  :disabled="!canInsert && !canUpdate"
-                  maxlength="2"
-                  min="1"
+                  readonly
                 />
               </td>
             </tr>
@@ -133,7 +129,7 @@
                   placeholder="이름은 30자 이내입니다."
                   v-model="matchData.matchName"
                   @input="handleInputChange('matchName', $event.target.value)"
-                  :disabled="!canInsert && !canUpdate"
+                  :readonly="canDelete"
                 />
               </td>
             </tr>
@@ -145,7 +141,7 @@
                   placeholder="이름은 30자 이내입니다."
                   v-model="matchData.round"
                   @input="handleInputChange('round', $event.target.value)"
-                  :disabled="!canInsert && !canUpdate"
+                  :readonly="canDelete"
                 />
               </td>
             </tr>
@@ -156,7 +152,7 @@
                   type="datetime-local"
                   v-model="matchData.startTime"
                   @input="handleInputChange('startTime', $event.target.value)"
-                  :disabled="!canInsert && !canUpdate"
+                  :readonly="canDelete"
                 />
               </td>
             </tr>
@@ -167,7 +163,7 @@
                   type="datetime-local"
                   v-model="matchData.endTime"
                   @input="handleInputChange('endTime', $event.target.value)"
-                  :disabled="!canInsert && !canUpdate"
+                  :readonly="canDelete"
                 />
               </td>
             </tr>
@@ -178,7 +174,7 @@
                   type="datetime-local"
                   v-model="matchData.bidOpenTime"
                   @input="handleInputChange('bidOpenTime', $event.target.value)"
-                  :disabled="!canInsert && !canUpdate"
+                  :readonly="canDelete"
                 />
               </td>
             </tr>
@@ -189,7 +185,7 @@
                   type="datetime-local"
                   v-model="matchData.bidCloseTime"
                   @input="handleInputChange('bidCloseTime', $event.target.value)"
-                  :disabled="!canInsert && !canUpdate"
+                  :readonly="canDelete"
                 />
               </td>
             </tr>
@@ -199,7 +195,7 @@
                 <select
                   v-model="matchData.isBidAvailable"
                   @change="handleInputChange('isBidAvailable', $event.target.value)"
-                  :disabled="!canInsert && !canUpdate"
+                  :readonly="canDelete"
                 >
                   <option :value="1">입찰 가능</option>
                   <option :value="0">입찰 불가능</option>
@@ -212,7 +208,7 @@
                 <input
                   type="file"
                   @change="handleFileChange"
-                  :disabled="!canInsert && !canUpdate"
+                  :readonly="canDelete"
                 />
               </td>
             </tr>
@@ -244,8 +240,7 @@
           >
             취소
           </button>
-          <p style="font-size: large;">{{ message }}</p> 
-          <p style="font-size: large;">{{ message2 }}</p> 
+
         </div>
       </div>
     </div>
@@ -254,10 +249,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import axios from 'axios';
-import {  API, messageCommon} from '../utils/messagesAPIs';
+import {  url, API, messageCommon} from '../utils/messagesAPIs';
 import { formatTimeToLocal } from '../utils/commonFunction';
 
+const router = useRouter();
 const sessionUserId = ref('');
 const sessionUserType = ref('');
 const matchArray = ref([]);
@@ -345,24 +342,7 @@ const handleInsert = () => {
   resetForm();
 };
 
-const handleUpdate = (index) => {
-  // Toggle the selected button
-  selectedUpdateButton.value = (selectedUpdateButton.value === index) ? null : index;
-  selectedDeleteButton.value = null;
-  // Update states
-  canInsert.value = false;
-  canUpdate.value = selectedUpdateButton.value !== null;
-  canDelete.value = false;
-  
-  // Set new match data or reset form
-  if (selectedUpdateButton.value === null) {
-    resetForm();
-  } else {
-    setNewMatchData(index);
-  }
-  
-  // Debugging log
-};
+
 const handleDownload = async (index) => {
     try {
       let fileName = '';
@@ -400,28 +380,43 @@ const handleDownload = async (index) => {
       console.error(`파일 다운로드 오류: ${error.message}`);
     }
   };
-const handleDelete = (index) => {
-  const match = matchArray.value[index];
 
-// 승인된 항목일 경우 경고 메시지를 띄우고 삭제를 중단
-if (match.approved === 'Y') {
-  alert("승인된 경기는 삭제할 수 없습니다.");
-  return;  // 함수 종료
-}
-  // Toggle the selected button
-  selectedDeleteButton.value = (selectedDeleteButton.value === index) ? null : index;
-  selectedUpdateButton.value = null;
-  // Update states
-  canInsert.value = false;
-  canUpdate.value = false;
-  canDelete.value = selectedDeleteButton.value !== null;
-  
-  // Set new match data or reset form
-  if (selectedDeleteButton.value === null) {
-    resetForm();
-  } else {
-    setNewMatchData(index);
-  }
+  const handleUpdate = (index) => {
+    // Toggle the selected button
+    selectedUpdateButton.value = (selectedUpdateButton.value === index) ? null : index;
+    selectedDeleteButton.value = null;
+    // Update states
+    canInsert.value = false;
+    canUpdate.value = selectedUpdateButton.value !== null;
+    canDelete.value = false;
+    message.value = '';
+    message2.value = '';
+    
+    // Set new match data or reset form
+    if (selectedUpdateButton.value === null) {
+      resetForm();
+    } else {
+      setNewMatchData(index);
+    }
+
+  };
+  const handleDelete = (index) => {
+    // Toggle the selected button
+    selectedDeleteButton.value = (selectedDeleteButton.value === index) ? null : index;
+    selectedUpdateButton.value = null;
+    // Update states
+    canInsert.value = false;
+    canUpdate.value = false;
+    canDelete.value = selectedDeleteButton.value !== null;
+    message.value = '';
+    message2.value = '';
+    
+    // Set new match data or reset form
+    if (selectedDeleteButton.value === null) {
+      resetForm();
+    } else {
+      setNewMatchData(index);
+    }
 };
 
 const setNewMatchData = (index) => {
@@ -435,7 +430,7 @@ const setNewMatchData = (index) => {
     round: match.round,
     startTime: match.start_datetime,
     endTime: match.end_datetime,
-    bidOpenTime: match.bid_close_datetime,
+    bidOpenTime: match.bid_open_datetime,
     bidCloseTime: match.bid_close_datetime,
     isBidAvailable: match.is_bid_available,
     fileName: match.filename_attached,
@@ -456,7 +451,7 @@ const handleSubmit = async () => {
       response = await axios.post(API.DELETE_MATCH, requestData);
     }
     if (response.status === 200) {
-      message.value = '작업이 완료되었습니다.';
+      message.value = response.data.message;
       if (canUpdate.value || canInsert.value) {
       handleFileUpload();
       } 
@@ -500,17 +495,10 @@ const handleSubmitCancel = () => {
 };
 
 const validateInput = () => {
-  const { matchNumber, venueCd, matchName, round, startTime, endTime, bidOpenTime, bidCloseTime, isBidAvailable } = matchData.value;
+  const { venueCd, matchName, round, startTime, endTime, bidOpenTime, bidCloseTime, isBidAvailable } = matchData.value;
   
   // 필드 중 하나라도 비어있거나(isBidAvailable을 제외) 기본값이라면 경고 표시
-  if (!matchNumber) {
-    alert("경기 번호를 입력해 주세요.");
-    return false;
-  }
-  if (matchNumber.length > 2) {
-    alert("경기 번호는 두 자리 이하로 입력해 주세요.");
-    return false;
-  }
+
   if (!venueCd) {
     alert("경기장을 선택해 주세요.");
     return false;
@@ -574,7 +562,7 @@ const fetchSessionUserId = async () => {
         await fetchMatches()
       } catch (error) {
         alert('로그인이 필요합니다.');
-        // router.push(url.adminlogin);
+        router.push(url.adminlogin);
       }
 };
 const handleFileChange = (event) => {
@@ -610,7 +598,7 @@ const resetState = () => {
 
 // Lifecycle hooks
 onMounted(async () => {
-      await fetchSessionUserId();
+  await fetchSessionUserId();
 
 });
 

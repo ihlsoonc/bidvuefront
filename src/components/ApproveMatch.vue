@@ -1,6 +1,5 @@
 <template>
     <div class="common-container">
-      <div class="content-container">
         <div>
           <br/>
           <h5>경기 정보</h5>
@@ -40,7 +39,7 @@
                   <button
                     @click="downloadFile(index)"
                     :class="{ active: selectedViewFileButton === index }"
-                    class="medium-button"
+                    class="small-button"
                   >
                     다운로드
                   </button>
@@ -65,14 +64,13 @@
               </tr>
             </tbody>
           </table>
-        </div>
       </div>
 
   
       <div v-if="canApprove|| canDisapprove  || canViewFile"  class="content-container">
         <div>
           <br/>
-          <h5>{{ guideMessage }}</h5>
+          <div v-if="guideMessage" class="message-box">{{ guideMessage }}</div>
           <table>
             <tbody>
               <tr>
@@ -168,7 +166,6 @@
               </tr>
             </tbody>
           </table>
-
   
           <div class="buttons-containers">
             <button
@@ -185,10 +182,10 @@
             >
               취소
             </button>
-            <p style="font-size: large;">{{ message }}</p> 
           </div>
         </div>
       </div>
+      <div v-if="message" class="message-box">{{ message }}</div>
     </div>
   </template>
   
@@ -202,6 +199,7 @@
 
   // Reactive references
   const sessionUserId = ref('');
+  const sessionTelno = ref('');
   const sessionUserType = ref('');
   const matchArray = ref([]);
   const matchData = ref({
@@ -374,6 +372,7 @@
   const fetchSessionUserId = async () => {
         try {
           const response = await axios.get(API.GET_SESSION_USERID, { withCredentials: true });
+          sessionTelno.value = response.data.telno;
           sessionUserId.value = response.data.userId;
           sessionUserType.value = response.data.userType;
           if (!(sessionUserType.value === 'H' || sessionUserType.value === 'A')) {

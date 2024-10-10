@@ -1,5 +1,3 @@
-// src/utils/statusMessages.js
-
 import { reactive } from 'vue';
 
 // 관리자 유형 객체
@@ -26,9 +24,10 @@ export const url = reactive({
   changeadminpassword :`/admin/changeadminpassword`,
   updateadmin :`/admin/updateadmin`,
   registeradmin :`/admin/registeradmin`,
-  managematch:`/admin/managematch`,
+  selectvenueadmin:`/admin/selectvenueadmin`,
   approvematch:`/admin/approvematch`,
   managevenue:`/admin/managevenue`,
+  managematch:`/admin/managematch`,
   updateseatprice:`/admin/updateseatprice`,
   selectmatch:`/admin/selectmatch`,
   bidresults: `/admin/bidresults`,
@@ -48,8 +47,10 @@ export const url = reactive({
 export const API = reactive({
   RESTORE_SESSION:          'http://localhost:5000/api/session/restore',
   GET_SESSION_USERID:       'http://localhost:5000/api/session/getuserid',
-  ADMIN_LOGOUT:             'http://localhost:5000/api/session/clear',
   USER_LOGOUT:              'http://localhost:5000/api/session/clear',
+  SEND_ONE_SMS:              'http://localhost:5000/api/sendsms/sendauthcode',
+  VERIFY_CODE:              'http://localhost:5000/api/sendsms/verify-code',
+
 
   USER_LOGIN:               'http://localhost:5000/api/user/login',
   REGISTER_USER:            'http://localhost:5000/api/user/register',
@@ -58,13 +59,7 @@ export const API = reactive({
   CHANGE_USER_PASSWORD:     'http://localhost:5000/api/user/change-password',
   FIND_USERID:              'http://localhost:5000/api/user/find-id',
 
-  ADMIN_LOGIN:              'http://localhost:5000/api/user/login',
-  REGISTER_ADMIN:           'http://localhost:5000/api/user/register',
-  UPDATE_ADMIN:             'http://localhost:5000/api/user/update',
-  GET_ADMIN_INFO:           'http://localhost:5000/api/user/getinfobyquery',
-  CHANGE_ADMIN_PASSWORD:    'http://localhost:5000/api/user/change-password',
-  FIND_ADMINID:             'http://localhost:5000/api/user/find-id',
-  
+
   GET_SEATPRICE:            'http://localhost:5000/api/seatprice/getbyid',
   UPDATE_SEATPRICE:         'http://localhost:5000/api/seatprice/update',
   UPDATE_SEATPRICEARRAY:    'http://localhost:5000/api/seatprice/updatearray',
@@ -73,6 +68,7 @@ export const API = reactive({
   GET_BIDS_BY_SEATARRAY:        'http://localhost:5000/api/bid/getbyseatarray',
   GET_MY_BIDS:              'http://localhost:5000/api/bid/getmybids',
   GET_MY_LASTBIDS:          'http://localhost:5000/api/bid/getmylastbids',
+  GET_ALL_BIDS:          'http://localhost:5000/api/bid/getallbids',
   SUBMIT_BID:               'http://localhost:5000/api/bid/submit',
   AWARD_BID:                'http://localhost:5000/api/bid/award',
   INIT_BID:                 'http://localhost:5000/api/bid/initialize',

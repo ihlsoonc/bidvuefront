@@ -1,0 +1,175 @@
+<div
+            id="seat-6"
+            class="box"
+            :class="{ selected: isSelected(6), bidded: hasBidders(6) }"
+            @click="onSeatClick(6)"
+          >
+            6
+          </div>
+          <div
+            id="seat-7"
+            class="box"
+            :class="{ selected: isSelected(7), bidded: hasBidders(7) }"
+            @click="onSeatClick(7)"
+          >
+            7
+          </div>
+          <div
+            id="seat-8"
+            class="box"
+            :class="{ selected: isSelected(8), bidded: hasBidders(8) }"
+            @click="onSeatClick(8)"
+          >
+            8
+          </div>
+          <div
+            id="seat-9"
+            class="box"
+            :class="{ selected: isSelected(9), bidded: hasBidders(9) }"
+            @click="onSeatClick(9)"
+          >
+            9
+          </div>
+          <div
+            id="seat-10"
+            class="box"
+            :class="{ selected: isSelected(10), bidded: hasBidders(10) }"
+            @click="onSeatClick(10)"
+          >
+            10
+          </div>
+          <div
+            id="seat-11"
+            class="box"
+            :class="{ selected: isSelected(11), bidded: hasBidders(11) }"
+            @click="onSeatClick(11)"
+          >
+            11
+          </div>
+          <div
+            id="seat-12"
+            class="box"
+            :class="{ selected: isSelected(12), bidded: hasBidders(12) }"
+            @click="onSeatClick(12)"
+          >
+            12
+          </div>
+          <div
+            id="seat-13"
+            class="box"
+            :class="{ selected: isSelected(13), bidded: hasBidders(13) }"
+            @click="onSeatClick(13)"
+          >
+            13
+          </div>
+          <div
+            id="seat-14"
+            class="box"
+            :class="{ selected: isSelected(14), bidded: hasBidders(14) }"
+            @click="onSeatClick(14)"
+          >
+            14
+          </div>
+          <div
+            id="seat-15"
+            class="box"
+            :class="{ selected: isSelected(15), bidded: hasBidders(15) }"
+            @click="onSeatClick(15)"
+          >
+            15
+          </div>
+          <div
+            id="seat-16"
+            class="box"
+            :class="{ selected: isSelected(16), bidded: hasBidders(16) }"
+            @click="onSeatClick(16)"
+          >
+            16
+          </div>
+          <div
+            id="seat-17"
+            class="box"
+            :class="{ selected: isSelected(17), bidded: hasBidders(17) }"
+            @click="onSeatClick(17)"
+          >
+            17
+          </div>
+          <div
+            id="seat-18"
+            class="box"
+            :class="{ selected: isSelected(18), bidded: hasBidders(18) }"
+            @click="onSeatClick(18)"
+          >
+            18
+          </div>
+          <div
+            id="seat-19"
+            class="box"
+            :class="{ selected: isSelected(19), bidded: hasBidders(19) }"
+            @click="onSeatClick(19)"
+          >
+            19
+          </div>
+          <div
+            id="seat-20"
+            class="box"
+            :class="{ selected: isSelected(20), bidded: hasBidders(20) }"
+            @click="onSeatClick(20)"
+          >
+            20
+          </div>
+          <div
+            id="seat-21"
+            class="box"
+            :class="{ selected: isSelected(21), bidded: hasBidders(21) }"
+            @click="onSeatClick(21)"
+          >
+            21
+          </div>
+          <div
+            id="seat-22"
+            class="box"
+            :class="{ selected: isSelected(22), bidded: hasBidders(22) }"
+            @click="onSeatClick(22)"
+          >
+            22
+          </div>
+          <div
+            id="seat-23"
+            class="box"
+            :class="{ selected: isSelected(23), bidded: hasBidders(23) }"
+            @click="onSeatClick(23)"
+          >
+            23
+          </div>
+          <div
+            id="seat-24"
+            class="box"
+            :class="{ selected: isSelected(24), bidded: hasBidders(24) }"
+            @click="onSeatClick(24)"
+          >
+            24
+          </div>
+          <div
+            id="seat-25"
+            class="box"
+            :class="{ selected: isSelected(25), bidded: hasBidders(25) }"
+            @click="onSeatClick(25)"
+          >
+            25
+          </div>
+          <div
+            id="seat-26"
+            class="box"
+            :class="{ selected: isSelected(26), bidded: hasBidders(26) }"
+            @click="onSeatClick(26)"
+          >
+            26
+          </div>
+          <div
+            id="seat-27"
+            class="box"
+            :class="{ selected: isSelected(27), bidded: hasBidders(27) }"
+            @click="onSeatClick(27)"
+          >
+            27{{  }}

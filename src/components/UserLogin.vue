@@ -8,13 +8,17 @@
       <div class="input-box">
         <form @submit.prevent="handleSubmit">
           <label>
-            사용자 아이디 또는 전화번호
+            전화번호
             <input
               type="text"
               name="userIdOrTelno"
               class="input"
-              placeholder="아이디"
+              placeholder="전화번호11자리"
+              minlength="11"
+              maxlength="11"
               v-model="userData.query"
+              :autocomplete="telno" 
+
             />
           </label>
           <label>
@@ -25,23 +29,24 @@
               class="input"
               placeholder="비밀번호"
               v-model="userData.password"
+              :autocomplete="current-password"
             />
           </label>
           <br/>
-          <div><p style="font-size: small;">{{ message }}</p></div>
+          <div v-if="message" class="message-box">{{ message }}</div>
           <br/>
           <button class="submit-button" type="submit">
             로그인
           </button>
         </form>
         <div class="buttons-containers">
-          <button class="xsmall-button" @click="handleFindId">
-            아이디찾기
+          <button  @click="handleFindPassword">
+            비밀번호 찾기
           </button>
-          <button class="xsmall-button" @click="handleChangePassword">
-            비밀번호 재설정
+          <button  @click="handleChangePassword">
+            비밀번호 변경
           </button>
-          <button class="xsmall-button" @click="handleRegister">
+          <button  @click="handleRegister">
             회원가입
           </button>
         </div>
@@ -67,7 +72,7 @@ export default {
     const message = ref('');
     const router = useRouter();  // route 선언
 
-    const handleFindId = () => {
+    const handleFindPassword = () => {
       if (tableName.value == 'user') {
         router.push({
           name: 'ChangeUserPassword', // 라우트 이름 사용 (선택사항)
@@ -96,7 +101,11 @@ export default {
     };
 
     const handleRegister = () => {
-      router.push(url.registeruser);
+      if (tableName.value == "user") {
+        router.push(url.registeruser);
+      } else {
+        router.push(url.registeradmin);
+      }
     };
 
     const handleSubmit = async () => {
@@ -104,14 +113,14 @@ export default {
       try {
         if (!validateInput(userData.value)) {
           return;
-    }
+      }
 
-    const response = await axios.post(API.USER_LOGIN, {
-      query: userData.value.query,
-      password: userData.value.password,
-      table: tableName.value,
-      queryType: "query",
-      }, { withCredentials: true });
+      const response = await axios.post(API.USER_LOGIN, {
+        query: userData.value.query,
+        password: userData.value.password,
+        table: tableName.value,
+        queryType: "telno",
+        }, { withCredentials: true });
 
       // 로그인 성공 처리
       if (response.status === 200) {
@@ -119,7 +128,7 @@ export default {
         if (tableName.value === 'user') {
           router.push(url.selectvenue);
         } else {
-          router.push(url.selectmatch);
+          router.push(url.selectvenueadmin);
         }
       }
     } catch (error) {
@@ -193,7 +202,7 @@ export default {
       message,
       tableName,
       handleSubmit,
-      handleFindId,
+      handleFindPassword,
       handleChangePassword,
       handleRegister,
     };
@@ -202,68 +211,6 @@ export default {
 </script>
 
 <style scoped>
-/* .common-container {
-  width: 100%;
-  max-width: 400px;
-  margin: 0 auto;
-}
-
-.content-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.input-box {
-  width: 100%;
-}
-
-.input {
-  width: 100%;
-  padding: 10px;
-  margin-top: 5px;
-  margin-bottom: 15px;
-  font-size: 16px;
-  border-radius: 5px;
-  border: 1px solid #ddd;
-}
-
-.submit-button {
-  width: 100%;
-  padding: 10px;
-  font-size: 16px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.submit-button:hover {
-  background-color: #45a049;
-}
-
-.buttons-containers {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-}
-
-.xsmall-button {
-  width: 30%;
-  padding: 8px;
-  font-size: 12px;
-  background-color: #f1f1f1;
-  color: black;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.xsmall-button:hover {
-  background-color: #ddd;
-} */
 
 /* 모바일 뷰 스타일 */
 @media (max-width: 600px) {
@@ -272,19 +219,5 @@ export default {
     padding: 8px;
   }
 
-  .submit-button {
-    font-size: 14px;
-    padding: 8px;
-  }
-
-  .xsmall-button {
-    font-size: 10px;
-    padding: 5px;
-    width: 32%;
-  }
-
-  h6 {
-    font-size: 18px;
-  }
 }
 </style>

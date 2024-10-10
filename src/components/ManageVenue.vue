@@ -1,48 +1,47 @@
 <template>
   <div class="common-container">
-    <div class="content-container">
-      <div>
-        <br/>
-        <h5>경기장 정보</h5>
-        <table v-if="venueArray.length > 0">
-          <thead>
-            <tr>
-              <th>경기장 코드</th>
-              <th>경기장 이름</th>
-              <th>경기장 위치 정보</th>
-              <th>경기장 일반 정보</th>
-              <th>수정</th>
-              <th>삭제</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(venue, index) in venueArray" :key="index">
-              <td>{{ venue.venue_cd }}</td>
-              <td>{{ venue.venue_name }}</td>
-              <td>{{ venue.venue_place_info }}</td>
-              <td>{{ venue.venue_general_info }}</td>
-              <td>
-                <button
-                  @click="handleUpdate(index)"
-                  :class="{ active: selectedUpdateButton === index }"
-                  class="small-button"
-                >
-                  수정
-                </button>
-              </td>
-              <td>
-                <button
-                  @click="handleDelete(index)"
-                  :class="{ active: selectedDeleteButton === index }"
-                  class="small-button"
-                >
-                  삭제
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <div v-if="!venueArray || venueArray.length == 0" class="message-box ">현재 정보가 없습니다.</div>
+    <div>
+      <br/>
+      <h5>경기장 정보</h5>
+      <table v-if="venueArray.length > 0">
+        <thead>
+          <tr>
+            <th>경기장 코드</th>
+            <th>경기장 이름</th>
+            <th>경기장 위치 정보</th>
+            <th>경기장 일반 정보</th>
+            <th>수정</th>
+            <th>삭제</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(venue, index) in venueArray" :key="index">
+            <td>{{ venue.venue_cd }}</td>
+            <td>{{ venue.venue_name }}</td>
+            <td>{{ venue.venue_place_info }}</td>
+            <td>{{ venue.venue_general_info }}</td>
+            <td>
+              <button
+                @click="handleUpdate(index)"
+                :class="{ active: selectedUpdateButton === index }"
+                class="small-button"
+              >
+                수정
+              </button>
+            </td>
+            <td>
+              <button
+                @click="handleDelete(index)"
+                :class="{ active: selectedDeleteButton === index }"
+                class="small-button"
+              >
+                삭제
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <div class="buttons-containers">
@@ -58,7 +57,7 @@
     <div v-if="canInsert || canUpdate || canDelete" class="content-container">
       <div>
         <br/>
-        <h5>{{ guideMessage() }}</h5>
+        <div v-if="guideMessage" class="message-box">{{ guideMessage }}</div>
         <table >
           <tbody>
             <tr>
@@ -69,8 +68,7 @@
                   :placeholder="canInsert ? '숫자 세 자리를 입력하세요.' : ''"
                   v-model="venueData.venueCd"
                   @input="handleInputChange(1, $event.target.value)"
-                  :readOnly="canUpdate"
-                  :disabled="!canInsert && !canUpdate"
+                  :readOnly="canUpdate || canDelete"
                   maxlength="3"
                 />
               </td>
@@ -83,7 +81,7 @@
                   v-model="venueData.venueName"
                   :placeholder="canInsert ? '이름은 40자 이내입니다.' : ''"
                   @input="handleInputChange(2, $event.target.value)"
-                  :disabled="!canInsert && !canUpdate"
+                  :readOnly="canDelete"
                 />
               </td>
             </tr>
@@ -95,7 +93,7 @@
                   :placeholder="canInsert ? '위치 안내 정보' : ''"
                   v-model="venueData.venuePlaceInfo"
                   @input="handleInputChange(3, $event.target.value)"
-                  :disabled="!canInsert && !canUpdate"
+                  :readOnly="canDelete"
                 />
               </td>
             </tr>
@@ -107,13 +105,13 @@
                   :placeholder="canInsert ? '경기장 일반 정보' : ''"
                   v-model="venueData.venueGeneralInfo"
                   @input="handleInputChange(4, $event.target.value)"
-                  :disabled="!canInsert && !canUpdate"
+                  :readOnly="canDelete"
                 />
               </td>
             </tr>
           </tbody>
         </table>
-
+        <!-- :disabled="!canInsert && !canUpdate" -->
         <div class="buttons-containers">
           <button
             :class="{ 'submit-button-disabled': !canInsert && !canUpdate && !canDelete }"
@@ -140,8 +138,8 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
-import axios from 'axios';
+import { ref, computed,onMounted } from 'vue';
+import axios, { HttpStatusCode } from 'axios';
 import { useRouter } from 'vue-router';
 import { url, API, messageCommon } from '../utils/messagesAPIs';
 
@@ -163,11 +161,20 @@ export default {
     const message = ref('');
     const router = useRouter();
 
+    // Computed properties
+    const guideMessage = computed(() => {
+      if (canInsert.value) return '정보 입력 후 확인버튼을 클릭하세요.';
+      if (canUpdate.value) return '경기 정보를 수정한 후 확인버튼을 클릭하세요.';
+      if (canDelete.value) return '삭제할 정보가 맞으면 확인버튼을 클릭하세요.';
+      return '';
+    });
+
     const fetchVenues = async () => {
       try {
         const response = await axios.get(API.GET_ALL_VENUES);
-        if (response.status === 200) {
+        if (response.status == 200) {
           venueArray.value = response.data;
+          message.value = response.data.message;
         }
       } catch (error) {
         handleError(error);
@@ -177,7 +184,6 @@ export default {
     const fetchSessionUserId = async () => {
       try {
         const response = await axios.get(API.GET_SESSION_USERID, { withCredentials: true });
-        console.log("managevenue session userid" ,response.data.userId )
         sessionUserId.value = response.data.userId;
       } catch (error) {
         alert('로그인이 필요합니다.');
@@ -255,39 +261,44 @@ export default {
     };
 
     const handleSubmit = async () => {
-      const { venueCd, venueName } = venueData.value;
 
       if (!canDelete.value && !validateInput()) return;
 
       try {
         let response;
-        let msg;
 
         if (canInsert.value) {
           response = await axios.post(API.ADD_VENUE, venueData.value);
-          msg = '성공적으로 추가되었습니다.';
         } else if (canUpdate.value) {
           response = await axios.post(API.UPDATE_VENUE, venueData.value);
-          msg = '성공적으로 수정되었습니다.';
         } else if (canDelete.value) {
           response = await axios.post(API.DELETE_VENUE, venueData.value);
-          msg = `${venueName} 경기장 (코드 ${venueCd}) 정보가 삭제되었습니다.`;
         }
 
         if (response && response.status === 200) {
-          message.value = msg;
+          message.value = response.data.message;
           fetchVenues();
         }
       } catch (error) {
-        handleError(error);
+        if (error.status === HttpStatusCode.Conflict) { 
+          message.value = error.response.data;
+          canDelete.value = false;
+          canInsert.value = true;
+          canUpdate.value = false;
+          selectedUpdateButton.value = null;
+          selectedDeleteButton.value = null;
+          return
+        } else {
+          handleError(error);
+        }
       }
-
       canDelete.value = false;
       canInsert.value = false;
       canUpdate.value = false;
       selectedUpdateButton.value = null;
       selectedDeleteButton.value = null;
       resetForm();
+
     };
 
     const handleInputChange = (inputNumber, value) => {
@@ -335,15 +346,6 @@ export default {
       return true;
     };
 
-    const guideMessage = () => {
-      if (canUpdate.value) {
-        return '정보를 수정한 후에 "확인" 버튼을 클릭하세요.';
-      } else if (canInsert.value) {
-        return '새로운 정보를 입력한 후에 "확인" 버튼을 클릭하세요.';
-      } else if (canDelete.value) {
-        return '삭제할 내용이 맞으면 "확인" 버튼을 클릭하세요.';
-      }
-    };
 
     const resetForm = () => {
       venueData.value = {

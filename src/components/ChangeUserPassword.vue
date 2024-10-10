@@ -1,209 +1,269 @@
 <template>
-  <div class="find-container">
+  <div class="input-box">
     <!-- 탭 선택 -->
     <div class="tabs">
       <button
-        :class="{ active: activeTab === 'findId' }"
-        @click="activeTab = 'findId'"
+        :class="{ active: activeTab === 'resetPassword' }"
+        @click="activeTab = 'resetPassword'"
       >
-        ID 찾기
+        비밀번호 찾기
       </button>
       <button
-        :class="{ active: activeTab === 'findPassword' }"
-        @click="activeTab = 'findPassword'"
+        :class="{ active: activeTab === 'changePassword' }"
+        @click="activeTab = 'changePassword'"
       >
         비밀번호 변경
       </button>
     </div>
 
-    <!-- ID 찾기 탭 -->
-    <div v-if="activeTab === 'findId'" class="find-container">
-      <h5>ID 찾기</h5>
-      <input v-model="email" type="email" placeholder="이메일 입력" />
-      <input v-model="username" type="text" placeholder="이름 입력" />
-      <button @click="findId">ID 찾기</button>
-      <div class="messagebox">
-        <p v-if="message">{{ message }}</p>
-        <p v-if="foundId">아이디: {{ foundId }}</p>
+    <!-- 비밀번호 찾기 탭 -->
+    <div v-if="activeTab === 'resetPassword'" class="input-box">
+      <h5>비밀번호 찾기</h5>
+        전화번호:
+        <input
+          v-model="userData.telno"
+          type="text"
+          class="input"
+          placeholder="전화번호를 입력하세요."
+          minlength="11"
+          maxlength="11"
+          :readonly="isValidTelno"
+          @input="checkTelNumber"
+        />
+      <button @click="handleTelnoCheck" type="button">인증번호 발송</button>
+      <!-- 인증번호 입력 -->
+      <div v-if="codeInputMode" class="rowflex-container">
+        <input
+          type="text"
+          v-model="userData.authNumber"
+          class="input"
+          style="font-size: 23px; margin-right: 10px;"
+          minlength="6"
+          maxlength="6"
+          placeholder="인증번호 6자리를 입력하세요."
+          @input="checkAuthNumber"
+        />
+        <button @click="handleTelnoCheck" type="button">재발송</button>
+        <div v-if="isValidTelno">
+          <input v-model="newPassword" type="password" placeholder="새 비밀번호 입력" />
+          <input v-model="confirmPassword" type="password" placeholder="새 비밀번호 확인" />
+          <button @click="changePassword">비밀번호 변경</button>
+          <button @click="cancelChange">작업 취소</button>
+        </div>
       </div>
+      <div v-if="telmsg" class="message-box">{{ telmsg }}</div>
     </div>
 
-    <!-- 비밀번호 찾기 탭 -->
-    <div v-if="activeTab === 'findPassword'" class="tab-content">
-      <h5>비밀번호 재설정</h5>
-      <input v-model="id" type="text" placeholder="ID 입력" :disabled="updateMode" />
-      <input v-model="currentPassword" type="password" placeholder="현재 비밀번호 입력" :disabled="updateMode" />
+    <!-- 비밀번호 변경 탭 -->
+    <div v-if="activeTab === 'changePassword'" class="input-box">
+      <h5>비밀번호 변경</h5>
+      <input v-model="id" 
+        type="text" 
+        placeholder="전화번호 입력" 
+        minlength="11"
+        maxlength="11"
+        autocomplete="tel"
+        :readonly="isValidated" />
+      <input v-model="currentPassword" 
+          type="password" 
+          placeholder="현재 비밀번호 입력" 
+          :readonly="isValidated" />
+      <button @click="handleValidate">확인</button>
 
-      <button @click="handleValidate">확인</button> 
-      <div v-if="isValidated">
+    </div>
+      <div v-if="isValidated || isValidTelno" >
         <input v-model="newPassword" type="password" placeholder="새 비밀번호 입력" />
         <input v-model="confirmPassword" type="password" placeholder="새 비밀번호 확인" />
         <button @click="changePassword">비밀번호 변경</button>
         <button @click="cancelChange">작업 취소</button>
       </div>
-      <p v-if="message">{{ message }}</p>
-    </div>
+      <div v-if="message" class="message-box">{{ message }}</div>
   </div>
 </template>
 
-
 <script setup>
-  import { ref, onMounted } from 'vue';
-  import { useRoute } from 'vue-router';
-  import axios from 'axios';
-  import { API, messageCommon} from '../utils/messagesAPIs';
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import axios from 'axios';
+import { API, messageCommon } from '../utils/messagesAPIs';
 
-  const activeTab = ref('findId');
-  const tableName = ref('');
-  const email = ref('');
-  const username = ref('');
-  const id = ref('');
-  const currentPassword = ref('');
-  const newPassword = ref('');
-  const confirmPassword = ref('');
-  const foundId = ref(null);
-  const updateMode = ref(false);
-  const isValidated = ref(false);
-  const message = ref('');
-  const route = useRoute();
+const activeTab = ref('resetPassword');
+const tableName = ref('');
+const id = ref('');
+const currentPassword = ref('');
+const newPassword = ref('');
+const confirmPassword = ref('');
+const isValidTelno = ref(false);
+const isValidated = ref(false);
+const message = ref('');
+const route = useRoute();
+const userData = ref({ telno: '', authNumber: '' });
+const returnCode = ref('');
+const codeInputMode = ref(false);
+const telmsg = ref('');
+const returnAuthCode = ref('');
 
-  // ID 찾기 로직 (예시)
-  const findId = async () => {
-    message.value = '';
-
-    if (!email.value || !username.value) {
-      message.value = '이메일과 이름을 입력해 주세요.';
-      return;
-    }
-
-    try {
-      // 서버로 이메일과 이름을 보내서 ID 조회 요청
-      const response = await axios.post(API.FIND_USERID, {
-        email: email.value,
-        userName: username.value,
-        table:tableName.value,
-        requestType :"findid"
-      });
-
-      // ID가 성공적으로 조회되었을 경우
-      if (response.status === 200) {
-        foundId.value = response.data.userid; // 서버에서 반환된 ID를 저장
-        message.value = '조회된 사용자 ID입니다.';
-      }
-    } catch (error) {
-      handleError(error);
-    }
-  };
-
-  // 비밀번호 찾기 유효성 검사
-  const handleValidate = async () => {
-    // ID와 현재 비밀번호 입력 여부 확인
-    if (!id.value || !currentPassword.value) {
-      message.value = 'ID와 현재 비밀번호를 입력해 주세요.';
-      return;
-    }
-
-    try {
-      // 서버에 유효성 검사 요청 (사용자 ID와 비밀번호 확인)
-      const response = await axios.post(API.GET_USER_INFO, {
-        query: id.value,
-        password: currentPassword.value,
-        table:tableName.value,
-        requestType :"query"
-      });
-
-      // 응답 상태 코드 확인
-      if (response.status === 200) {
-        isValidated.value = true; // 유효성 검사 성공 시 새로운 비밀번호 입력 가능
-        message.value = '';  // 에러 메시지 초기화
-        updateMode.value = true;
-      }
-    } catch (error) {
-      handleError(error);
-    }
+// 전화번호 인증 요청
+const handleTelnoCheck = async () => {
+  userData.value.authNumber = '';
+  if (!userData.value.telno) {
+    alert("전화번호를 입력해 주세요.");
+    return false;
   }
-  // 비밀번호 변경 처리 함수
-  const cancelChange = async () => {
-    updateMode.value = false;
+
+  const telnoPattern = /^\d{11}$/;
+
+  if (!telnoPattern.test(userData.value.telno)) {
+    alert("전화번호는 11자리 숫자여야 합니다.");
+    return false;
+  }
+  codeInputMode.value = true;
+  try {
+    const response = await axios.post(API.SEND_ONE_SMS, {
+      ...userData.value,
+      table: tableName.value
+    });
+
+    if (response.status === 200) {
+      returnAuthCode.value = response.data;
+      returnCode.value = response.data.code;
+      userData.value.authNumber = returnCode.value;
+      telmsg.value = response.data.message+response.data.verificationCode;
+    }
+  } catch (error) {
+    telmsg.value = error.response.data;
+  }
+};
+
+// 전화번호 변경 확인
+const checkTelNumber = () => {
+  telmsg.value = "전화번호가 변경되었습니다. 인증번호 발송을 눌러주세요.";
+  isValidTelno.value = false;
+};
+
+// 인증번호 확인
+const checkAuthNumber = () => {
+  if (userData.value.authNumber.length === 6) {
+    compareAuthNumber();
+  }
+};
+
+// 인증번호 비교
+const compareAuthNumber = async () => {
+  try {
+    const response = await axios.post(API.VERIFY_CODE, {
+      ...userData.value,
+      table: tableName.value
+    });
+
+    if (response.status === 200) {
+      telmsg.value = response.data.message;
+      isValidTelno.value = true;
+      codeInputMode.value = false;
+      userData.value.authNumber = '';
+    }
+  } catch (error) {
+    telmsg.value = error.response.data;
+  }
+};
+
+// 비밀번호 변경 유효성 확인
+const handleValidate = async () => {
+  if (!id.value || !currentPassword.value) {
+    message.value = '전화번호와 현재 비밀번호를 입력해 주세요.';
+    return;
+  }
+
+  try {
+    const response = await axios.post(API.GET_USER_INFO, {
+      query: id.value,
+      password: currentPassword.value,
+      table: tableName.value,
+      queryType: "telno"
+    });
+
+    if (response.status === 200) {
+      isValidated.value = true;
+      message.value = '';
+    }
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// 비밀번호 변경 취소
+const cancelChange = async () => {
+  isValidated.value = false;
+  isValidTelno.value = false;
+  telmsg.value ='';
+};
+
+// 비밀번호 변경
+const changePassword = async () => {
+  if (!newPassword.value || !confirmPassword.value) {
+    message.value = '새 비밀번호와 비밀번호 확인을 입력해 주세요.';
+    return;
+  }
+
+  if (newPassword.value !== confirmPassword.value) {
+    message.value = '새 비밀번호와 비밀번호 확인이 일치하지 않습니다.';
+    return;
+  }
+
+  try {
+    let paramId;
+    if (isValidTelno.value) {
+      paramId = userData.value.telno;
+    } else {
+      paramId = id.value;
+    }
+    const response = await axios.post(API.CHANGE_USER_PASSWORD, {
+      telno: paramId,
+      password: newPassword.value,
+      table: tableName.value
+    });
+
+    if (response.status === 200) {
+      message.value = '';
+      newPassword.value = '';
+      confirmPassword.value = '';
+      alert('비밀번호가 성공적으로 변경되었습니다.');
+    }
+    isValidTelno.value = false;
     isValidated.value = false;
+  } catch (error) {
+    handleError(error);
   }
+};
 
-  // 비밀번호 변경 처리 함수
-  const changePassword = async () => {
-    if (!newPassword.value || !confirmPassword.value) {
-      message.value = '새 비밀번호와 비밀번호 확인을 입력해 주세요.';
-      return;
-    }
+// 에러 처리
+const handleError = (error) => {
+  if (error.response) {
+    message.value = error.response.data;
+  } else if (error.request) {
+    message.value = messageCommon.ERR_NETWORK;
+  } else {
+    message.value = messageCommon.ERR_ETC;
+  }
+};
 
-    if (newPassword.value !== confirmPassword.value) {
-      console.log(newPassword.value,confirmPassword.value)
-      message.value = '새 비밀번호와 비밀번호 확인이 일치하지 않습니당당.';
-      return;
-    }
-
-    // 비밀번호 복잡성 검사 (예: 최소 8자 이상, 숫자와 특수문자 포함)
-    // const passwordRegex = /^(?=.*\d)(?=.*[a-zA-Z])(?=.*[!@#$%^&*]).{8,}$/;
-    // if (!passwordRegex.test(newPassword.value)) {
-    //   message.value = '비밀번호는 최소 8자 이상, 숫자와 특수문자를 포함해야 합니다.';
-    //   return;
-    // }
-
-    try {
-      // 서버에 비밀번호 변경 요청 (예시)
-      const response = await axios.post(API.CHANGE_USER_PASSWORD, {
-        UserId: id.value,
-        password: newPassword.value,
-        table:tableName.value
-      });
-
-      if (response.status === 200) {
-        message.value = '';
-
-        // 비밀번호 변경 성공 시 입력 필드 초기화 및 피드백 제공
-        newPassword.value = '';
-        confirmPassword.value = '';
-        updateMode.value = false;
-        alert('비밀번호가 성공적으로 변경되었습니다.');
-      }
-    } catch (error) {
-      handleError(error);
-    }
-  };
-
-  const handleError = (error) => {
-      if (error.response) {
-        message.value = error.response.data;
-      } else if (error.request) {
-        message.value = messageCommon.ERR_NETWORK;
-      } else {
-        message.value = messageCommon.ERR_ETC;
-      }
-    }
-  // 컴포넌트가 마운트될 때 쿼리 파라미터에서 `tab` 값 확인
-  onMounted(() => {
-    const sessiontableName = sessionStorage.getItem('tableName');
-    if (sessiontableName) {
-      tableName.value = sessiontableName;
+// 컴포넌트가 마운트될 때 실행
+onMounted(() => {
+  const sessiontableName = sessionStorage.getItem('tableName');
+  if (sessiontableName) {
+    tableName.value = sessiontableName;
   }
 
   const tabQuery = route.query.tab;
   if (tabQuery === '2') {
-    activeTab.value = 'findPassword';
+    activeTab.value = 'changePassword';
   } else {
-    activeTab.value = 'findId';
+    activeTab.value = 'resetPassword';
   }
 });
-
-
 </script>
 
 <style scoped>
-.find-container {
-  max-width: 600px;
-  margin: auto;
-  padding: 10px;
-}
-
 .tabs {
   display: flex;
   justify-content: space-around;
@@ -225,29 +285,4 @@
 .tab-content {
   text-align: center;
 }
-
-.messagebox {
-  display: block;
-  width: 100%;
-  margin: 10px 0;
-  padding: 2px;
-  box-sizing: border-box;
-  border: rgb(132, 55, 55);
-}
-
-/* input {
-  display: block;
-  width: 100%;
-  margin: 10px 0;
-  padding: 8px;
-  box-sizing: border-box;
-}
-
-button {
-  padding: 10px 20px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  cursor: pointer;
-} */
 </style>

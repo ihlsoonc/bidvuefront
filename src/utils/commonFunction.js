@@ -1,5 +1,4 @@
 
-
 export const getSportName = (code) => {
   const sports = {
     '01': '야구',
